@@ -1,6 +1,32 @@
 # yui
 
-A simple and *minimal* **interactive** UNIX shell written in Rust. It was written to help me learn Rust as well as the basics of UNIX shells and process management.
+A simple and *minimal* **interactive** UNIX shell written in Rust. Mainly to help me learn Rust, and the basics of interfacing and managing UNIX processes.
+
+## To build
+
+**You will need:**
+
+- `rustc`
+- `cargo` (***nightly*** *toolchain*)
+
+Clone the repo:
+
+```sh
+git clone https://github.com/rayes0/yui.git
+cd yui
+```
+
+If you just want to try yui (dev version):
+
+```sh
+cargo run
+```
+
+**Building**:
+
+```sh
+cargo build --release
+```
 
 ## Planned Features
 
@@ -10,54 +36,60 @@ A simple and *minimal* **interactive** UNIX shell written in Rust. It was writte
 **Core**
 
 - [X] Run basic commands with args
-- [ ] *small* parser for light scripting only
-- [ ] Quoted strings: `""` and `''`
+- [X] Quoted strings: `""` and `''`
+	- [ ] Nested quotes? (don't know if this is feasible, and normal Bash do it)
 - [ ] Simple signal handling
 - [ ] Exit code handling
 - [ ] Command substitution through `$()` and backticked strings
-- [ ] `~` expansion for homedir
+- [X] `~` expansion for homedir
 - [ ] `!!` history expansion
-- [ ] Handle line wrapping properly for commands longer than the terminal window (Take into account the length of the prompt)
+- [ ] Differentiate between login and non login shell
 - [ ] Implement job control
-  - [ ] `jobs`, `bg` and `fg` commands
-  - [ ] CTRL-z
+  - [ ] `jobs`, `bg` and `fg` builtins
+  - [ ] CTRL-Z
+- [ ] *small* parser for light scripting only, mainly to make the config somewhat bashrc-like (partly finished)
 
 **Editing**
 
-- [ ] Utilize readline vi and emacs modes to edit lines
+- [X] Utilize readline vi or emacs modes to edit lines
 - [ ] Support for multi-line commands (with `\`)
 - [ ] Support using external editor to edit commands
 
 **Operators**
 
-- [ ] AND and OR: `&&` and `||`, also negations (`!`)
+- [ ] AND and OR: `&&` and `||`
 - [ ] End of command: `;`
 - [ ] Basic arithmetic: `+`, `-`, `/`, `*`, `%`
 - [ ] Pipes via `|`
-- [ ] Redirections via `>` and `<`, (maybe `>>` and `<<` too for convenience)
+- [ ] Redirections via `>` and `<`, (maybe `>>` and `<<` too)
 
 **Builtins**
 
 - [ ] `echo`
   - [X] Print basic text
-  - [ ] Support for escape sequences
+  - [ ] Support printing styled text
   - [ ] Support same flags as Bash's builtin version
 - [X] `cd`
 - [X] `exit`
 - [ ] `history`
 - [ ] `alias`
 - [ ] `exec`
-- [ ] `export` (env vars)
+- [X] `export` (env vars)
+- [ ] `bind`, to create custom keybinds
 
 **Completions**
 
 - [ ] `complete` command
-- [ ] Directory completions
+- [X] Directory completions
+- [ ] Command completions
+- [X] Automatic completion hinting from history
 
 **Customization**
 
+- [ ] Optional truecolor support
 - [ ] Simple prompt customization
 - [ ] Read settings from configuration file
+
 </details>
 
 ---
