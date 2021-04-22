@@ -1,6 +1,6 @@
 # yui
 
-A simple and *minimal* **interactive** UNIX shell written in Rust. Mainly to help me learn Rust, and the basics of interfacing and managing UNIX processes.
+A simple and *minimal*, primarily interactive-focused UNIX shell written in Rust, although it does have a small parser for light scripting. It's purpose is mainly to help me learn Rust, and the basics of interfacing and managing UNIX processes.
 
 ## To build
 
@@ -28,7 +28,7 @@ cargo run
 cargo build --release
 ```
 
-## Planned Features
+## Features (Current and Planned)
 
 <details>
 <summary>Click to expand!</summary>
@@ -47,7 +47,6 @@ cargo build --release
 - [ ] Implement job control
   - [ ] `jobs`, `bg` and `fg` builtins
   - [ ] CTRL-Z
-
 - [ ] *small* parser for light scripting only, mainly to make the config somewhat bashrc-like (partly finished)
 	- [ ] Full line comments starting with `#`
 
