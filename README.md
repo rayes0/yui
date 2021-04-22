@@ -37,7 +37,7 @@ cargo build --release
 
 - [X] Run basic commands with args
 - [X] Quoted strings: `""` and `''`
-	- [ ] Nested quotes? (don't know if this is feasible, and normal Bash do it)
+	- [ ] Nested quotes? (don't know if this is feasible, and normal Bash doesn't do it)
 - [ ] Simple signal handling
 - [ ] Exit code handling
 - [ ] Command substitution through `$()` and backticked strings
@@ -47,7 +47,9 @@ cargo build --release
 - [ ] Implement job control
   - [ ] `jobs`, `bg` and `fg` builtins
   - [ ] CTRL-Z
+
 - [ ] *small* parser for light scripting only, mainly to make the config somewhat bashrc-like (partly finished)
+	- [ ] Full line comments starting with `#`
 
 **Editing**
 
@@ -72,7 +74,7 @@ cargo build --release
 - [X] `cd`
 - [X] `exit`
 - [ ] `history`
-- [ ] `alias`
+- [ ] `alias` or `function`
 - [ ] `exec`
 - [X] `export` (env vars)
 - [ ] `bind`, to create custom keybinds

@@ -94,8 +94,8 @@ pub fn spawn_cmd(c: &Vec<String>) {
         cmd => {
             let child_cur = Command::new(cmd).args(args).spawn();
             match child_cur {
-                Ok(mut child_cur) => { 
-                    if let Err(m) = child_cur.wait() {
+                Ok(mut child) => { 
+                    if let Err(m) = child.wait() {
                         eprintln!("{}", m);
                     }
                 },
@@ -104,4 +104,3 @@ pub fn spawn_cmd(c: &Vec<String>) {
         }
     };
 }
-
