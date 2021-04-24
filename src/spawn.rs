@@ -1,88 +1,27 @@
-use std::{
-    process::Command,
-    fs::File,
-    io::{ prelude::*, BufReader },
-    path::Path,
-};
+use std::process::Command;
 
 use crate::builtins;
-use crate::paths;
+use crate::parser;
 
-// read files line by line, putting each line into a vector
-
-pub fn split_lines(path: impl AsRef<Path>) -> Vec<String> {
-    let file = File::open(path).expect("no such file");
-    let buf = BufReader::new(file);
-    buf.lines()
-        .map(|l| l.expect("Could not parse line"))
-        .collect()
-}
-
-pub fn split_to_args(line: String) -> Vec<String> {
-    let mut args = Vec::new();
-    let mut cur_sep = String::new(); // for tracking the current seperator
-    let mut cur_arg = String::new(); // for tracking the current arg
-    let mut new_cycle = false;
-
-    // TODO: Is just looping over all the characters really the best way to do this?
-    for (_, c) in line.chars().enumerate() {
-        // Order matters here!
-
-        // Single and double quotes
-        if c == '"' || c == '\'' {
-            if cur_sep.is_empty() {
-                cur_sep.push(c);
-                continue;
-            } else if cur_sep == c.to_string() {
-                cur_sep = String::new();
-                continue;
-            } /*else {
-                cur_arg.push(c);
-            }*/
-        }
-
-        // Spaces
-        if c == ' ' {
-            if cur_sep.is_empty() {
-              args.push(cur_arg.trim().to_string());
-              new_cycle = true;
-            } else {
-                cur_arg.push(c);
-                continue;
-            }
-        }
-
-        // Expand home
-        if c == '~' {
-            if cur_sep.is_empty() {
-                cur_arg.push_str(&paths::get_user_home());
-                continue;
-            } else {
-                cur_arg.push('~');
-                continue;
-            }
-        }
-
-        if new_cycle == true {
-            cur_arg = String::new();
-            new_cycle = false;
-            continue;
-        }
-
-        // Regular character if it matches none of the above
-        cur_arg.push(c);
-    }
-
-    args.push(cur_arg.trim().to_string());
-    return args;
+pub fn choose_and_run(raw: parser::ArgTypes) {
+    match raw {
+        parser::ArgTypes::Norm(data) => { // normal command
+            spawn_cmd(&data);
+            return;
+        },
+        parser::ArgTypes::Piped(data) => { // contains a pipe
+            spawn_cmd(&data);
+            return;
+        },
+    };
 }
 
 pub fn spawn_cmd(c: &Vec<String>) {
-    //let mut cmd_split = c.trim().split_whitespace();
+//pub fn spawn_cmd(c: &parser::ArgTypes) {
     let mut cmd_split = c.iter();
     let cmd = cmd_split.next().unwrap(); // first one will be the command
     let args = cmd_split;
-    // Need to check for builtins
+    // check for builtins
     match cmd.as_str() {
         "cd" => builtins::cd(args.collect()),
         "echo" => builtins::echo(args.collect()),
@@ -104,3 +43,17 @@ pub fn spawn_cmd(c: &Vec<String>) {
         }
     };
 }
+
+/*fn spawn_piped(c: &Vec<String>, total: usize) {
+    let mut first_cmd = Command::new("ls").arg("/").stdout(Stdio::piped()).spawn().unwrap();
+
+    let mut second_cmd = Command::new("grep").arg("etc").stdin(Stdio::piped()).stdout(Stdio::inherit()).spawn().unwrap();
+
+    if let Some(ref mut stdout) = first_cmd.stdout {
+        if let Some(ref mut stdin) = second_cmd.stdin {
+            let mut buf: Vec<u8> = Vec::new();
+            stdout.read_to_end(&mut buf).unwrap();
+            stdin.write_all(&buf).unwrap();
+        }
+    };
+}*/

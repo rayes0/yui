@@ -15,12 +15,16 @@ use rustyline::{
     highlight::{ Highlighter, MatchingBracketHighlighter },
     hint::{ Hinter, HistoryHinter },
 };
+
 //use rustyline::config;
+
 use colored::*;
 
+mod parser;
 mod spawn;
 mod builtins;
 mod paths;
+mod config;
 
 #[derive(Helper)]
 struct CustomHelper {
@@ -79,19 +83,38 @@ impl Validator for CustomHelper {
 
 fn main() {
     if let Some(arg) = env::args().nth(1) {
-        // Command line arg given, assume its a script file
-        let lines = spawn::split_lines(arg);
+        match arg.as_str() {
+            "-c" => {
+                let mut to_run = String::new();
+                for (i, arg) in env::args().enumerate() {
+                    if i == 0 || arg == "-c" {
+                        continue;
+                    } else if to_run == "" {
+                        to_run.push_str(arg.as_str());
+                    } else {
+                        to_run.push(' ');
+                        to_run.push_str(arg.as_str());
+                    };
+                };
+                spawn::choose_and_run(parser::split_to_args(to_run));
+            },
+            _ => { // assume its a file
+                let lines = parser::split_lines(arg);
+                for s in lines.iter() {
+                    if regex::Regex::new(r"^\#.*").unwrap()
+                        .is_match(&s) { // line is a comment
+                            continue;
+                    }
+                    if s.trim() == "" { // line is whitespace only
+                        continue;
+                    }
+                    spawn::choose_and_run(parser::split_to_args(s.to_string()));
+                }
+                return;
+            },
+        };
+    };
 
-        for s in lines.iter() {
-            if regex::Regex::new(r"^\#.*").unwrap()
-                .is_match(&s) { // line is a comment
-                    continue;
-            }
-
-            let args = spawn::split_to_args(s.to_string());
-            spawn::spawn_cmd(&args);
-        }
-    }
     let homedir: String = env::var("HOME").expect("Could not get your home directory");
     let histpath: String = [homedir, ".yui_history".to_string()].join("/");
     let helper = CustomHelper {
@@ -129,8 +152,7 @@ fn main() {
                         continue;
                 }
 
-                let args = spawn::split_to_args(line);
-                spawn::spawn_cmd(&args);
+                spawn::choose_and_run(parser::split_to_args(line));
             },
             Err(ReadlineError::Interrupted) => {
                 println!("^c");
@@ -142,8 +164,8 @@ fn main() {
                 rl.save_history(&histpath).unwrap();
                 break;
             },
-            Err(err) => {
-                println!("Error: {:?}", err);
+            Err(e) => {
+                println!("Error: {:?}", e);
                 continue;
             }
         }

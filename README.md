@@ -1,13 +1,15 @@
 # yui
 
-A simple and *minimal*, primarily interactive-focused UNIX shell written in Rust, although it does have a small parser for light scripting. It's purpose is mainly to help me learn Rust, and the basics of interfacing and managing UNIX processes.
+A simple and *minimal* UNIX shell written in Rust.
+
+`yui` is primarily interactive focused, although it does have a small parser for light scripting. It's purpose is mainly to help me learn Rust, and the basics of interfacing and managing UNIX processes.
 
 ## To build
 
 **You will need:**
 
 - `rustc`
-- `cargo` (***nightly*** *toolchain*)
+- `cargo`
 
 Clone the repo:
 
@@ -35,20 +37,23 @@ cargo build --release
 
 **Core**
 
+- [ ] *Documentation*
 - [X] Run basic commands with args
 - [X] Quoted strings: `""` and `''`
-	- [ ] Nested quotes? (don't know if this is feasible, and normal Bash doesn't do it)
 - [ ] Simple signal handling
 - [ ] Exit code handling
-- [ ] Command substitution through `$()` and backticked strings
 - [X] `~` expansion for homedir
-- [ ] `!!` history expansion
+- [ ] Comprehensive Bash-like history expansion:
+	- [ ] `!!` history expansion
+	- [ ] Bash-like "magic space"
+	- [ ] history expansion by both relative and absolute index
+	- [ ] Advanced expansion with globbing: `!*`, `!$`, `!^`
+	- [X] Reverse history search
 - [ ] Differentiate between login and non login shell
-- [ ] Implement job control
+- [ ] Job control
   - [ ] `jobs`, `bg` and `fg` builtins
   - [ ] CTRL-Z
-- [ ] *small* parser for light scripting only, mainly to make the config somewhat bashrc-like (partly finished)
-	- [ ] Full line comments starting with `#`
+- [ ] Run command with temporary environment, eg: `PATH=/bin ls`
 
 **Editing**
 
@@ -56,13 +61,28 @@ cargo build --release
 - [ ] Support for multi-line commands (with `\`)
 - [ ] Support using external editor to edit commands
 
-**Operators**
+**Parser**
 
+- [ ] *small* parser for light scripting only, mainly to make the config somewhat bashrc-like (partly finished)
+	- [X] Full line comments starting with `#`
+	- [ ] Partial line comments
+	- [ ] `if` conditionals
+- [ ] functions
+
+**Operators and Syntax**
+
+- [ ] `test`, `[`, and `]` for testing conditionals
+	- [ ] `==`, `!=`, `<`, `>`
 - [ ] AND and OR: `&&` and `||`
 - [ ] End of command: `;`
 - [ ] Basic arithmetic: `+`, `-`, `/`, `*`, `%`
+	- [ ] Follow order of operations
+	- [ ] Float calculations
 - [ ] Pipes via `|`
-- [ ] Redirections via `>` and `<`, (maybe `>>` and `<<` too)
+- [ ] Redirections via `>` and `<`
+- [ ] `\` for escaping characters
+- [ ] Support for globs: `*`, `[...]`, `?`, `{...}` etc.
+- [ ] Command substitution (subshells?) through `$()` and backticked strings
 
 **Builtins**
 
@@ -72,24 +92,33 @@ cargo build --release
   - [ ] Support same flags as Bash's builtin version
 - [X] `cd`
 - [X] `exit`
+	- [ ] Specify custom exit code
 - [ ] `history`
-- [ ] `alias` or `function`
+- [ ] `alias`
 - [ ] `exec`
 - [X] `export` (env vars)
 - [ ] `bind`, to create custom keybinds
 
-**Completions**
+**Completion and Hinting**
 
-- [ ] `complete` command
-- [X] Directory completions
+- [ ] `complete` command for custom completions
+- [X] Directory and file completions
 - [ ] Command completions
 - [X] Automatic completion hinting from history
+	- [ ] Intelligent hinting according to cwd
+- [ ] Host completion for ssh
 
 **Customization**
 
+- [ ] **Read settings from configuration file**
 - [ ] Optional truecolor support
 - [ ] Simple prompt customization
-- [ ] Read settings from configuration file
+
+**Won't do** (Things that will *not* be implemented into `yui`):
+
+- `for`, `while`, `until`, etc. Any kind of looping - use a proper scripting language for that
+- Advanced arithmetic, precision above 8-9 digits, trigonometry, etc. - use an appropriate tool for that
+- Advanced/special expansions: `$$`, `${foo/foo/bar}`, `${foo##.*}`, etc. - You should probably be using a proper scripting language if you need these
 
 </details>
 

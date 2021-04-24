@@ -56,6 +56,36 @@ pub fn export(s: Vec<&String>) {
     
 }
 
-//pub fn alias(s: Vec<&str>) {
-    //let parts = s.split('X');
-//}
+pub fn set(s: Vec<&String>) {
+    for input in s.iter() {
+        if let Ok(re) = Regex::new(r"^([a-zA-Z0-9_]+)=(.*)$") {
+            if !re.is_match(input) {
+                eprintln!("yui: set: invalid usage");
+            }
+
+            for cap in re.captures_iter(input) {
+                let name = cap[1].to_string();
+                let value = paths::expand_home(&cap[2]);
+                env::set_var(name, &value);
+            }
+        } else {
+            eprintln!("yui: export: regex error");
+        }
+    }
+    
+}
+
+#[cfg(test)]
+mod tests {
+    use std::env;
+    use super::*;
+
+    #[test]
+    fn cd_basic_test() {
+        let path = "/tmp".to_string();
+        let vec = vec![&path];
+        cd(vec);
+        let new = env::current_dir().expect("can't get current dir");
+        assert_eq!("/tmp", new.as_os_str().to_str().unwrap());
+    }
+}
