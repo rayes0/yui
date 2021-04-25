@@ -1,6 +1,6 @@
 # yui
 
-A simple and *minimal* UNIX shell inspired by Bash and Fish, written in Rust.
+A simple and *minimal* UNIX shell inspired by bash and fish, written in Rust.
 
 `yui` is primarily interactive focused, although it does have a small parser for light scripting. It's purpose is mainly to help me learn Rust, and the basics of interfacing and managing UNIX processes.
 
@@ -34,18 +34,20 @@ cargo build --release
 
 <details>
 <summary>Click to expand!</summary>
+<br>
+
+- [ ] *Documentation*
 
 **Core**
 
-- [ ] *Documentation*
 - [X] Run basic commands with args
 - [X] Quoted strings: `""` and `''`
 - [ ] Simple signal handling
 - [ ] Exit code handling
 - [X] `~` expansion for homedir
-- [ ] Comprehensive Bash-like history expansion:
+- [ ] Comprehensive bash-like history expansion:
 	- [ ] `!!` history expansion
-	- [ ] Bash-like "magic space"
+	- [ ] bash-like "magic space"
 	- [ ] history expansion by both relative and absolute index
 	- [ ] Advanced expansion with globbing: `!*`, `!$`, `!^`
 	- [X] Reverse history search
@@ -78,7 +80,7 @@ cargo build --release
 - [ ] Basic arithmetic: `+`, `-`, `/`, `*`, `%`
 	- [ ] Follow order of operations
 	- [ ] Float calculations
-- [ ] Pipes via `|`
+- [X] Pipes via `|`
 - [ ] Redirections via `>` and `<`
 - [ ] `\` for escaping characters
 - [ ] Support for globs: `*`, `[...]`, `?`, `{...}` etc.
@@ -86,10 +88,10 @@ cargo build --release
 
 **Builtins**
 
-- [ ] `echo`
+- [X] `echo`
   - [X] Print basic text
   - [ ] Support printing styled text
-  - [ ] Support same flags as Bash's builtin version
+  - [ ] Support same flags as bash's builtin version
 - [X] `cd`
 - [X] `exit`
 	- [ ] Specify custom exit code
@@ -98,6 +100,7 @@ cargo build --release
 - [ ] `exec`
 - [X] `export` (env vars)
 - [ ] `bind`, to create custom keybinds
+- [ ] `set`, to change settings on the fly
 
 **Completion and Hinting**
 
@@ -114,7 +117,7 @@ cargo build --release
 - [ ] Optional truecolor support
 - [ ] Simple prompt customization
 
-**Won't do** (Things that will *not* be implemented into `yui`):
+**Won't do** (Things that will *not* be implemented into `yui`, at least for the time being):
 
 - `for`, `while`, `until`, etc. Any kind of looping - use a proper scripting language for that
 - Advanced arithmetic, precision above 8-9 digits, trigonometry, etc. - use an appropriate tool for that

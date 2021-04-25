@@ -32,9 +32,10 @@ pub fn split_lines(path: impl AsRef<Path>) -> Vec<String> {
 }
 
 pub enum ArgTypes {
-    Piped(Vec<String>),
+    // first field is for the command, second indicates prescence of operator
+    Piped(Vec<String>, bool),
     //Redir
-    Norm(Vec<String>),
+    Norm(Vec<String>, bool),
 }
 
 pub fn split_to_args(line: String) -> ArgTypes {
@@ -42,8 +43,9 @@ pub fn split_to_args(line: String) -> ArgTypes {
     let mut cur_quot = String::new(); // for tracking the current quoted string
     let mut cur_arg = String::new(); // for tracking the current arg
     let mut has_pipe = false;
+    let mut has_op = false;
     let mut prev_space = false;
-    //let mut prev_char: char;
+    let mut prev_spchar: char = '_'; // track the previous special character for two character combos, the '_' is just a placeholder
     let mut new_cycle = false;
 
     // TODO: Is just looping over all the characters really the best way to do this?
@@ -91,6 +93,24 @@ pub fn split_to_args(line: String) -> ArgTypes {
             prev_space = false;
         }
 
+        // && Operator
+        if c == '&' {
+            if cur_quot.is_empty() {
+                if prev_spchar == '&' {
+                    cur_arg.push_str("&&");
+                    prev_spchar = ' ';
+                    has_op = true;
+                    continue;
+                } else {
+                    prev_spchar = '&';
+                    continue;
+                }
+            } else {
+                cur_arg.push(c);
+                continue;
+            }
+        }
+
         // !! history expansion NOTE: WIP
         /*if c == '!' {
             if cur_quot.is_empty() {
@@ -128,20 +148,31 @@ pub fn split_to_args(line: String) -> ArgTypes {
 
     args.push(cur_arg.trim().to_string());
 
-    if has_pipe == true {
-        ArgTypes::Piped(args)
-    } else {
-        ArgTypes::Norm(args)
+    // Once again, the order is vitally important here
+    if has_pipe == true && has_op == true { // both pipes and operators
+        ArgTypes::Piped(args, true)
+    } else if has_op == true { // one or more operators
+        ArgTypes::Norm(args, true)
+    } else if has_pipe == true { // one or more pipes
+        ArgTypes::Piped(args, false)
+    } else { // normal command
+        ArgTypes::Norm(args, false)
     }
 }
 
-// TODO: find cleaner way rather than looping
+// split vector by '|'
 pub fn split_pipes(all: &[String]) -> Vec<&[String]> {
     let mut vec = Vec::new();
     let iter = all.split(|f| f == &"|");
-    for c in iter {
-        vec.push(c);
-    }
+    vec.extend(iter);
+    return vec;
+}
+
+// split operators, currently only && for now
+pub fn split_ops(all: &[String]) -> Vec<&[String]> {
+    let mut vec = Vec::new();
+    let iter = all.split(|f| f== &"&&");
+    vec.extend(iter);
     return vec;
 }
 
@@ -150,6 +181,30 @@ mod tests {
     use super::*;
 
     #[test]
+    fn test_split_ops() {
+        assert_eq!(
+            split_ops(&vec!["ls".to_string(), "&&".to_string(), "echo".to_string()]),
+            vec![vec!["ls".to_string()], vec!["echo".to_string()]]
+        );
+        assert_eq!(
+            split_ops(&vec!["ls".to_string(), "-al".to_string(), "&&".to_string(), "echo".to_string(), "hello space".to_string()]),
+            vec![vec!["ls".to_string(), "-al".to_string()], vec!["echo".to_string(), "hello space".to_string()]]
+        );
+    }
+
+    #[test]
+    fn test_split_pipes() {
+        assert_eq!(
+            split_pipes(&vec!["ls".to_string(), "|".to_string(), "echo".to_string()]),
+            vec![vec!["ls".to_string()], vec!["echo".to_string()]]
+        );
+        assert_eq!(
+            split_pipes(&vec!["ls".to_string(), "-al".to_string(), "|".to_string(), "echo".to_string(), "hello space".to_string(), "|".to_string(), "echo".to_string()]),
+            vec![vec!["ls".to_string(), "-al".to_string()], vec!["echo".to_string(), "hello space".to_string()], vec!["echo".to_string()]]
+        );
+    }
+
+    /*#[test]
     fn test_split_line_to_args() {
         assert_eq!(split_to_args("ls".to_string()), vec!["ls"]);
         assert_eq!(split_to_args(" ls".to_string()), vec!["", "ls"]);
@@ -162,10 +217,5 @@ mod tests {
         assert_eq!(split_to_args("ls \"double quotes\"".to_string()), vec!["ls", "double quotes"]);
         assert_eq!(split_to_args("ls | wc".to_string()), vec!["ls", "|", "wc"]);
         assert_eq!(split_to_args("echo pipes with args | wc".to_string()), vec!["echo", "pipes", "with", "args", "|", "wc"]);
-    }
-
-    #[test]
-    fn test_split_pipes() {
-        assert_eq!(split_pipes(["ls", "|", "wc"]), vec![vec!["ls"], vec!["wc"]]);
-    }
+    }*/
 }

@@ -9,12 +9,20 @@ use crate::parser;
 
 pub fn choose_and_run(raw: parser::ArgTypes) {
     match raw {
-        parser::ArgTypes::Norm(data) => { // normal command
+        parser::ArgTypes::Norm(data, false) => { // normal command
             spawn_cmd(&data);
         },
-        parser::ArgTypes::Piped(data) => { // contains one or more pipes
-            let pipes = parser::split_pipes(&data);
-            spawn_piped(&pipes);
+        parser::ArgTypes::Piped(data, false) => { // contains one or more pipes
+            let parts = parser::split_pipes(&data);
+            spawn_piped(&parts);
+        },
+        parser::ArgTypes::Norm(data, true) => { // normal command with op
+            // TODO: make this proper once we get exit code handling
+            let parts = parser::split_ops(&data);
+            spawn_chained(&parts);
+        },
+        parser::ArgTypes::Piped(data, true) => { // contains one or more pipes with op in one of them
+            eprintln!("yui: {:?}: Ambiguous parsing order", data);
         },
     };
 }
@@ -45,7 +53,7 @@ fn spawn_piped(all: &[&[String]]) {
 
     // split off and spawn first cmd
     let mut first_cmd = cmds.next().unwrap().iter();
-    let mut first_cmd_spawn = Command::new(first_cmd.next().unwrap())
+    let first_cmd_spawn = Command::new(first_cmd.next().unwrap())
         .args(first_cmd)
         .stdout(Stdio::piped())
         .spawn();
@@ -75,7 +83,7 @@ fn spawn_piped(all: &[&[String]]) {
             store_stdout = middle_cmd_spawn.stdout; // overwrite the current stdout, which
             // will become the previous stdout in the next round
         } else { // this means we are on the last command
-            let mut last_cmd_spawn = Command::new(iter.next().unwrap())
+            let last_cmd_spawn = Command::new(iter.next().unwrap())
                 .args(iter)
                 .stdin(Stdio::piped())
                 .stdout(Stdio::inherit())
@@ -92,6 +100,17 @@ fn spawn_piped(all: &[&[String]]) {
             break;
         }
         buf = Vec::new(); // clear buffer
+    }
+}
+
+fn spawn_chained(all: &[&[String]]) {
+    for c in all.iter() {
+        let mut iter = c.iter();
+        let mut spawn = Command::new(iter.next().unwrap()).args(iter).spawn().unwrap();
+        if let Err(m) = spawn.wait() {
+            eprintln!("{}", m);
+            break;
+        }
     }
 }
 
