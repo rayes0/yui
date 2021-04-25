@@ -1,4 +1,8 @@
-use std::process::Command;
+use std::process::{Command, Stdio};
+use std::io::{Read, Write};
+use std::ffi::OsStr;
+use std::cell::RefCell;
+use std::rc::Rc;
 
 use crate::builtins;
 use crate::parser;
@@ -7,53 +11,100 @@ pub fn choose_and_run(raw: parser::ArgTypes) {
     match raw {
         parser::ArgTypes::Norm(data) => { // normal command
             spawn_cmd(&data);
-            return;
         },
-        parser::ArgTypes::Piped(data) => { // contains a pipe
-            spawn_cmd(&data);
-            return;
+        parser::ArgTypes::Piped(data) => { // contains one or more pipes
+            let pipes = parser::split_pipes(&data);
+            spawn_piped(&pipes);
         },
     };
 }
 
-pub fn spawn_cmd(c: &Vec<String>) {
-//pub fn spawn_cmd(c: &parser::ArgTypes) {
+pub fn spawn_cmd(c: &[String]) {
     let mut cmd_split = c.iter();
     let cmd = cmd_split.next().unwrap(); // first one will be the command
-    let args = cmd_split;
+    let args = cmd_split.clone();
     // check for builtins
-    match cmd.as_str() {
-        "cd" => builtins::cd(args.collect()),
-        "echo" => builtins::echo(args.collect()),
-        "export" => builtins::export(args.collect()),
+    if check_builtins(&mut cmd.as_str(), &cmd_split.collect::<Vec<&String>>()) {
+        return;
+    } else {
+        // Run commands, echo any errors
+        let child_cur = Command::new(cmd).args(args).spawn();
+        match child_cur {
+            Ok(mut child) => { 
+                if let Err(m) = child.wait() {
+                    eprintln!("{}", m);
+                }
+            },
+            Err(e) => eprintln!("{}", e),
+        }
+    }
+}
+
+fn spawn_piped(all: &[&[String]]) {
+    let mut cmds = all.iter().peekable(); // peekable so we know when we are on the last cmd
+
+    // split off and spawn first cmd
+    let mut first_cmd = cmds.next().unwrap().iter();
+    let mut first_cmd_spawn = Command::new(first_cmd.next().unwrap())
+        .args(first_cmd)
+        .stdout(Stdio::piped())
+        .spawn();
+
+    // buffer for writing stdout into
+    let mut buf: Vec<u8> = Vec::new();
+    let mut store_stdout = first_cmd_spawn.unwrap().stdout;
+
+    while let Some(c) = cmds.next() {
+        let mut iter = c.iter();
+        if cmds.peek().is_some() {
+            let mut middle_cmd_spawn = Command::new(iter.next().unwrap())
+                .args(iter)
+                .stdin(Stdio::piped())
+                .stdout(Stdio::piped())
+                .spawn()
+                .unwrap();
+
+            // Read previous stdout into current stdin
+            if let Some(ref mut prev_stdout) = store_stdout {
+                if let Some(ref mut cur_stdin) = middle_cmd_spawn.stdin {
+                    prev_stdout.read_to_end(&mut buf).unwrap();
+                    cur_stdin.write_all(&buf).unwrap();
+                }
+            }
+
+            store_stdout = middle_cmd_spawn.stdout; // overwrite the current stdout, which
+            // will become the previous stdout in the next round
+        } else { // this means we are on the last command
+            let mut last_cmd_spawn = Command::new(iter.next().unwrap())
+                .args(iter)
+                .stdin(Stdio::piped())
+                .stdout(Stdio::inherit())
+                .spawn()
+                .unwrap();
+
+                store_stdout.unwrap().read_to_end(&mut buf).unwrap();
+                last_cmd_spawn.stdin.unwrap().write_all(&buf).unwrap();
+
+            /*if let Err(m) = last_cmd_spawn.wait() {
+                eprintln!("{}", m);
+            }*/
+
+            break;
+        }
+        buf = Vec::new(); // clear buffer
+    }
+}
+
+fn check_builtins(c: &str, a: &Vec<&String>) -> bool {
+    let args = a.to_vec();
+    match c {
+        "cd" => builtins::cd(args),
+        "echo" => builtins::echo(args),
+        "export" => builtins::export(args),
         //"history" => builtins::history(),
         "version" => println!("yui, version 0.0\nA bash-like shell focused on speed and simplicity.\n"),
         "builtins" => println!("Builtin commands:\ncd\necho\nversion\nexit"),
-        // Run commands, echo any errors
-        cmd => {
-            let child_cur = Command::new(cmd).args(args).spawn();
-            match child_cur {
-                Ok(mut child) => { 
-                    if let Err(m) = child.wait() {
-                        eprintln!("{}", m);
-                    }
-                },
-                Err(e) => eprintln!("{}", e),
-            }
-        }
-    };
+        _ => return false,
+    }
+    return true;
 }
-
-/*fn spawn_piped(c: &Vec<String>, total: usize) {
-    let mut first_cmd = Command::new("ls").arg("/").stdout(Stdio::piped()).spawn().unwrap();
-
-    let mut second_cmd = Command::new("grep").arg("etc").stdin(Stdio::piped()).stdout(Stdio::inherit()).spawn().unwrap();
-
-    if let Some(ref mut stdout) = first_cmd.stdout {
-        if let Some(ref mut stdin) = second_cmd.stdin {
-            let mut buf: Vec<u8> = Vec::new();
-            stdout.read_to_end(&mut buf).unwrap();
-            stdin.write_all(&buf).unwrap();
-        }
-    };
-}*/

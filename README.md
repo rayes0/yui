@@ -1,6 +1,6 @@
 # yui
 
-A simple and *minimal* UNIX shell written in Rust.
+A simple and *minimal* UNIX shell inspired by Bash and Fish, written in Rust.
 
 `yui` is primarily interactive focused, although it does have a small parser for light scripting. It's purpose is mainly to help me learn Rust, and the basics of interfacing and managing UNIX processes.
 

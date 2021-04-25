@@ -37,22 +37,13 @@ pub enum ArgTypes {
     Norm(Vec<String>),
 }
 
-/*impl ArgTypes {
-    fn run_norm(&self) {
-        crate::spawn::spawn_cmd(self);
-    }
-    fn run_piped(&self) {
-        crate::spawn::spawn_piped(self);
-    }
-}*/
-
 pub fn split_to_args(line: String) -> ArgTypes {
     let mut args = Vec::new();
     let mut cur_quot = String::new(); // for tracking the current quoted string
     let mut cur_arg = String::new(); // for tracking the current arg
     let mut has_pipe = false;
     let mut prev_space = false;
-    let mut prev_char: char;
+    //let mut prev_char: char;
     let mut new_cycle = false;
 
     // TODO: Is just looping over all the characters really the best way to do this?
@@ -71,16 +62,16 @@ pub fn split_to_args(line: String) -> ArgTypes {
         }
 
         // Pipes
-        /*if c == '|' {
+        if c == '|' {
             if cur_quot.is_empty() {
-                args.push(cur_arg.trim().to_string());
                 has_pipe = true;
+                args.push("|".to_string());
                 continue;
             } else {
                 cur_arg.push(c);
                 continue;
             }
-        }*/
+        }
 
         // Spaces
         if c == ' ' {
@@ -145,19 +136,14 @@ pub fn split_to_args(line: String) -> ArgTypes {
 }
 
 // TODO: find cleaner way rather than looping
-/*fn split_pipes(all: Vec<String>) {
-    let iter = all.iter();
-    // number of piped *commands* will be equal to the number of pipe chars + 1
-    let mut tot_piped = iter.filter(|&d| *d == '|').count() + 1;
-    let mut cmd = Vec::new();
+pub fn split_pipes(all: &[String]) -> Vec<&[String]> {
+    let mut vec = Vec::new();
+    let iter = all.split(|f| f == &"|");
     for c in iter {
-        if c.to_owned() == "|".to_string() {
-            crate::spawn::spawn_piped(cmd, tot_piped);
-        } else {
-            cmd.push(c);
-        }
+        vec.push(c);
     }
-}*/
+    return vec;
+}
 
 #[cfg(test)]
 mod tests {
@@ -174,8 +160,8 @@ mod tests {
         assert_eq!(split_to_args("ls -a -l".to_string()), vec!["ls", "-a", "-l"]);
         assert_eq!(split_to_args("ls 'single quotes'".to_string()), vec!["ls", "single quotes"]);
         assert_eq!(split_to_args("ls \"double quotes\"".to_string()), vec!["ls", "double quotes"]);
-        assert_eq!(split_to_args("ls | wc"), vec!["ls", "|", "wc"]);
-        assert_eq!(split_to_args("echo pipes with args | wc"), vec!["echo", "pipes", "with", "args", "|", "wc"]);
+        assert_eq!(split_to_args("ls | wc".to_string()), vec!["ls", "|", "wc"]);
+        assert_eq!(split_to_args("echo pipes with args | wc".to_string()), vec!["echo", "pipes", "with", "args", "|", "wc"]);
     }
 
     #[test]
