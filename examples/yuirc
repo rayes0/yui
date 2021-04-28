@@ -1,0 +1,24 @@
+# .yuirc
+# example config for yui, with the default options
+
+set STARTBLOCK
+
+hist_ign_space=true
+hist_ign_dups=false
+hist_max_size=1000
+completion_type=list
+completion_limit=50
+hinting_color=BrightBlack
+keyseq_timeout=10
+edit_mode=Emacs
+auto_add_history=true
+bell_style=None
+color_mode=Enabled
+tab_stop=4
+check_cur_pos=false
+indent_size=2
+bracketed_paste=true
+
+set ENDBLOCK
+
+# vim: ft=sh

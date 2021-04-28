@@ -30,6 +30,10 @@ cargo run
 cargo build --release
 ```
 
+## Configuration
+
+See [https://github.com/rayes0/yui/wiki/Configuration](https://github.com/rayes0/yui/wiki/Configuration)
+
 ## Features (Current and Planned)
 
 <details>

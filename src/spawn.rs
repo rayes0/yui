@@ -129,7 +129,7 @@ fn check_builtins(c: &str, a: &Vec<&String>) -> bool {
         "set" => builtins::set(args),
         //"history" => builtins::history(),
         "version" => println!("yui, version 0.0\nA bash-like shell focused on speed and simplicity.\n"),
-        "builtins" => println!("Builtin commands:\ncd\necho\nversion\nexit"),
+        "builtins" => println!("Builtin commands:\ncd\necho\nversion\nexport\nset\nexit"),
         _ => return false,
     }
     return true;
