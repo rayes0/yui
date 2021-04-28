@@ -1,15 +1,34 @@
 use regex::Regex;
 use std::str;
 use std::env;
+use std::path::Path;
 
 // get homedir
 pub fn get_user_home() -> String {
     match env::var("HOME") {
         Ok(x) => x,
         Err(e) => {
-            println!("yui: env HOME error: {:?}", e);
+            println!("yui: error in getting HOME env: {:?}", e);
             String::new()
         }
+    }
+}
+
+pub fn get_user_config() -> Option<String> {
+    let pri1 = [get_user_home(), ".yuirc".to_string()].join("/");
+    let pri2 = [check_xdg(), "yui/yuirc".to_string()].join("/");
+    let pri3 = [get_user_home(), ".config/yui/yuirc".to_string()].join("/");
+    fn check_xdg() -> String {
+        if let Ok(p) = env::var("XDG_CONFIG_HOME") { p } else { "".to_string() }
+    }
+    if Path::new(&pri1).exists() {
+        Some(pri1)
+    } else if Path::new(&pri2).exists() {
+        Some(pri2)
+    } else if Path::new(&pri3).exists() {
+        Some(pri3)
+    } else {
+        None
     }
 }
 

@@ -4,6 +4,10 @@ use std::{
     process::exit,
     borrow::Cow::{ self, Borrowed, Owned },
 };
+use regex::Regex;
+
+use std::sync::Mutex;
+use lazy_static::lazy_static;
 
 use rustyline::{ Editor, Config, Context };
 use rustyline::error::ReadlineError;
@@ -15,9 +19,6 @@ use rustyline::{
     highlight::{ Highlighter, MatchingBracketHighlighter },
     hint::{ Hinter, HistoryHinter },
 };
-
-//use rustyline::config;
-
 use colored::*;
 
 mod parser;
@@ -25,6 +26,12 @@ mod spawn;
 mod builtins;
 mod paths;
 mod config;
+
+// Initialize global config
+use config::YuiConfig;
+lazy_static! {
+    static ref CONFIG: Mutex<YuiConfig> = Mutex::new(<YuiConfig as Default>::default());
+}
 
 #[derive(Helper)]
 struct CustomHelper {
@@ -56,7 +63,7 @@ impl Highlighter for CustomHelper {
         }
     }
     fn highlight_hint<'h>(&self, hint: &'h str) -> Cow<'h, str> {
-        Owned(hint.green().to_string())
+        Owned(hint.color(CONFIG.lock().unwrap().hinting_color).to_string())
     }
     fn highlight<'l>(&self, line: &'l str, pos: usize) -> Cow<'l, str> {
         self.highlighter.highlight(line, pos)
@@ -98,25 +105,33 @@ fn main() {
                 };
                 spawn::choose_and_run(parser::split_to_args(to_run));
             },
-            _ => { // assume its a file
-                let lines = parser::split_lines(arg);
-                for s in lines.iter() {
-                    if regex::Regex::new(r"^\#.*").unwrap()
-                        .is_match(&s) { // line is a comment
-                            continue;
-                    }
-                    if s.trim() == "" { // line is whitespace only
-                        continue;
-                    }
-                    spawn::choose_and_run(parser::split_to_args(s.to_string()));
+            _ => {
+                let re = Regex::new(r"-.*").unwrap();
+                if re.is_match(&arg) {
+                    eprintln!("Invalid arg: {}", arg);
+                    return;
+                } else {
+                    parser::parse_file(arg);
                 }
-                return;
             },
-        };
-    };
+        }
+    }
 
-    let homedir: String = env::var("HOME").expect("Could not get your home directory");
-    let histpath: String = [homedir, ".yui_history".to_string()].join("/");
+    if let Some(f) = paths::get_user_config() {
+        parser::parse_file(f);
+    }
+
+    let histpath: String = [paths::get_user_home(), ".yui_history".to_string()].join("/");
+    loop {
+        if repl(&histpath) == true {
+            continue;
+        } else {
+            break;
+        }
+    }
+}
+
+fn repl(hist: &String) -> bool {
     let helper = CustomHelper {
         completer: FilenameCompleter::new(),
         highlighter: MatchingBracketHighlighter::new(),
@@ -127,12 +142,12 @@ fn main() {
 
     let mut rl = Editor::with_config(editor_config());
     rl.set_helper(Some(helper));
-    if rl.load_history(&histpath).is_err() {
-        File::create(&histpath).expect("Could not create history file");
+    if rl.load_history(hist).is_err() {
+        File::create(hist).expect("Could not create history file");
     }
 
     // REPL
-    loop {
+    let ret: bool = loop {
         let prompt = get_prompt();
         rl.helper_mut().expect("No helper!").styled_prompt = prompt.italic().blue().to_string();
         let readline = rl.readline(&prompt);
@@ -141,35 +156,42 @@ fn main() {
             Ok(line) => {
                 rl.add_history_entry(line.as_str());
 
-                if line == "exit" {
+                if line.trim() == "exit" {
                     println!("Goodbye!");
-                    rl.save_history(&histpath).unwrap();
+                    rl.save_history(hist).unwrap();
                     exit(0);
                 } else if line.trim() == "" { // line is empty or whitespace only
                     continue;
                 } else if regex::Regex::new(r"^\#.*").unwrap()
                     .is_match(&line) { // line is a comment
                         continue;
+                //TODO: Make this more reliable by matching later
+                } else if regex::Regex::new(r"^set\s.*").unwrap() 
+                    .is_match(&line.trim()) {
+                        spawn::choose_and_run(parser::split_to_args(line));
+                        break true // need to reload the line editor
                 }
 
                 spawn::choose_and_run(parser::split_to_args(line));
             },
             Err(ReadlineError::Interrupted) => {
                 println!("^c");
-                continue;
             },
             // exit on ^d
             Err(ReadlineError::Eof) => {
                 println!("^d... Goodbye!");
-                rl.save_history(&histpath).unwrap();
-                break;
+                rl.save_history(hist).unwrap();
+                break false
             },
             Err(e) => {
                 println!("Error: {:?}", e);
-                continue;
             }
         }
-
+    };
+    if ret == true {
+        true
+    } else {
+        false
     }
 }
 
@@ -183,9 +205,21 @@ fn get_prompt() -> String {
 }
 
 fn editor_config() -> Config {
+    let conf = CONFIG.lock().unwrap();
     Config::builder()
-        .history_ignore_space(true)
-        //.completion_type(config::CompletionType::List)
-        //.edit_mode(config::EditMode::Vi)
+        .max_history_size(conf.hist_max_size)
+        .history_ignore_dups(conf.hist_ign_dups)
+        .history_ignore_space(conf.hist_ign_space)
+        .completion_type(conf.completion_type)
+        .completion_prompt_limit(conf.completion_limit)
+        .keyseq_timeout(conf.keyseq_timeout)
+        .edit_mode(conf.edit_mode)
+        .auto_add_history(conf.auto_add_history)
+        .bell_style(conf.bell_style)
+        .color_mode(conf.color_mode)
+        .tab_stop(conf.tab_stop)
+        .check_cursor_position(conf.check_cur_pos)
+        .indent_size(conf.indent_size)
+        .bracketed_paste(conf.bracketed_paste)
         .build()
 }

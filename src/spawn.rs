@@ -1,8 +1,5 @@
 use std::process::{Command, Stdio};
 use std::io::{Read, Write};
-use std::ffi::OsStr;
-use std::cell::RefCell;
-use std::rc::Rc;
 
 use crate::builtins;
 use crate::parser;
@@ -21,8 +18,8 @@ pub fn choose_and_run(raw: parser::ArgTypes) {
             let parts = parser::split_ops(&data);
             spawn_chained(&parts);
         },
-        parser::ArgTypes::Piped(data, true) => { // contains one or more pipes with op in one of them
-            eprintln!("yui: {:?}: Ambiguous parsing order", data);
+        parser::ArgTypes::Piped(_data, true) => { // contains one or more pipes with op in one of them
+            eprintln!("yui: Multiple operators with ambiguous precedence");
         },
     };
 }
@@ -53,14 +50,19 @@ fn spawn_piped(all: &[&[String]]) {
 
     // split off and spawn first cmd
     let mut first_cmd = cmds.next().unwrap().iter();
-    let first_cmd_spawn = Command::new(first_cmd.next().unwrap())
+    let mut first_cmd_spawn = Command::new(first_cmd.next().unwrap())
         .args(first_cmd)
         .stdout(Stdio::piped())
-        .spawn();
+        .spawn()
+        .unwrap();
 
     // buffer for writing stdout into
     let mut buf: Vec<u8> = Vec::new();
-    let mut store_stdout = first_cmd_spawn.unwrap().stdout;
+    let mut store_stdout = first_cmd_spawn.stdout.take();
+
+    if let Err(e) = first_cmd_spawn.wait() {
+        eprintln!("yui: pipe error: {}", e);
+    }
 
     while let Some(c) = cmds.next() {
         let mut iter = c.iter();
@@ -80,10 +82,14 @@ fn spawn_piped(all: &[&[String]]) {
                 }
             }
 
-            store_stdout = middle_cmd_spawn.stdout; // overwrite the current stdout, which
+            store_stdout = middle_cmd_spawn.stdout.take(); // overwrite the current stdout, which
             // will become the previous stdout in the next round
+
+            if let Err(e) = middle_cmd_spawn.wait() {
+                eprintln!("yui: pipe error: {}", e);
+            }
         } else { // this means we are on the last command
-            let last_cmd_spawn = Command::new(iter.next().unwrap())
+            let mut last_cmd_spawn = Command::new(iter.next().unwrap())
                 .args(iter)
                 .stdin(Stdio::piped())
                 .stdout(Stdio::inherit())
@@ -91,11 +97,11 @@ fn spawn_piped(all: &[&[String]]) {
                 .unwrap();
 
                 store_stdout.unwrap().read_to_end(&mut buf).unwrap();
-                last_cmd_spawn.stdin.unwrap().write_all(&buf).unwrap();
+                last_cmd_spawn.stdin.take().unwrap().write_all(&buf).unwrap();
 
-            /*if let Err(m) = last_cmd_spawn.wait() {
-                eprintln!("{}", m);
-            }*/
+                if let Err(e) = last_cmd_spawn.wait() {
+                    eprintln!("yui: pipe error: {}", e);
+                }
 
             break;
         }
@@ -120,6 +126,7 @@ fn check_builtins(c: &str, a: &Vec<&String>) -> bool {
         "cd" => builtins::cd(args),
         "echo" => builtins::echo(args),
         "export" => builtins::export(args),
+        "set" => builtins::set(args),
         //"history" => builtins::history(),
         "version" => println!("yui, version 0.0\nA bash-like shell focused on speed and simplicity.\n"),
         "builtins" => println!("Builtin commands:\ncd\necho\nversion\nexit"),

@@ -5,13 +5,43 @@ use std::{
     path::Path,
 };
 
-use rustyline::history::History;
+//use rustyline::history::History;
 
 use crate::paths;
+use crate::config;
+
+pub fn parse_file(path: impl AsRef<Path>) {
+    let lines = split_file_lines(path);
+    let mut in_setblock = false;
+    for (i, s) in lines.iter().enumerate() {
+        if regex::Regex::new(r"^\#.*").unwrap()
+            .is_match(&s) { // line is a comment
+                continue;
+        }
+        if s.trim() == "" { // line is whitespace only
+            continue;
+        }
+        if s.trim() == "set STARTBLOCK" {
+            in_setblock = true;
+            continue;
+        } else if s.trim() == "set ENDBLOCK" {
+            in_setblock = false;
+            continue;
+        }
+        if in_setblock == true {
+            if config::setblock_parse_and_exec(s) == false {
+                eprintln!("yuirc: Line: {}, Invalid syntax: \"{}\"", i, s);
+                return;
+            } else {
+                continue;
+            }
+        }
+        crate::spawn::choose_and_run(split_to_args(s.to_string()));
+    }
+}
 
 // read files line by line, putting each line into a vector
-
-pub fn split_lines(path: impl AsRef<Path>) -> Vec<String> {
+pub fn split_file_lines(path: impl AsRef<Path>) -> Vec<String> {
     let file = File::open(path);
     match file {
         Ok(file) => {
@@ -114,11 +144,11 @@ pub fn split_to_args(line: String) -> ArgTypes {
         // !! history expansion NOTE: WIP
         /*if c == '!' {
             if cur_quot.is_empty() {
-                if prev_char == '!' {
+                if prev_spchar == '!' {
                     cur_arg.push_str(History::last().unwrap());
-                    prev_char = ' ';
+                    prev_spchar = ' ';
                 } else {
-                    prev_char = '!';
+                    prev_spchar = '!';
                 }
             } else {
                 cur_arg.push('!');

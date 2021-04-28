@@ -60,19 +60,20 @@ pub fn set(s: Vec<&String>) {
     for input in s.iter() {
         if let Ok(re) = Regex::new(r"^([a-zA-Z0-9_]+)=(.*)$") {
             if !re.is_match(input) {
-                eprintln!("yui: set: invalid usage");
+                eprintln!("yui: set: invalid usage\n  set OPTION=VALUE");
             }
 
             for cap in re.captures_iter(input) {
                 let name = cap[1].to_string();
                 let value = paths::expand_home(&cap[2]);
-                env::set_var(name, &value);
+                if crate::config::convert_and_set_key(&name, &value) == false {
+                    eprintln!("Invalid option: {}", name);
+                }
             }
         } else {
-            eprintln!("yui: export: regex error");
+            eprintln!("yui: set: regex error");
         }
     }
-    
 }
 
 #[cfg(test)]

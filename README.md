@@ -2,7 +2,7 @@
 
 A simple and *minimal* UNIX shell inspired by bash and fish, written in Rust.
 
-`yui` is primarily interactive focused, although it does have a small parser for light scripting. It's purpose is mainly to help me learn Rust, and the basics of interfacing and managing UNIX processes.
+`yui` is primarily interactive focused, although it does have a small parser for light scripting. I wrote it mainly to help me learn Rust, and the basics of interfacing and managing UNIX processes.
 
 ## To build
 
@@ -56,6 +56,7 @@ cargo build --release
   - [ ] `jobs`, `bg` and `fg` builtins
   - [ ] CTRL-Z
 - [ ] Run command with temporary environment, eg: `PATH=/bin ls`
+- [ ] Built-in ability to time commands (eg: individual commands in pipe), and other stats
 
 **Editing**
 
@@ -100,11 +101,11 @@ cargo build --release
 - [ ] `exec`
 - [X] `export` (env vars)
 - [ ] `bind`, to create custom keybinds
-- [ ] `set`, to change settings on the fly
+- [X] `set`, to change settings on the fly
 
 **Completion and Hinting**
 
-- [ ] `complete` command for custom completions
+- [ ] toml files or similar for custom completions
 - [X] Directory and file completions
 - [ ] Command completions
 - [X] Automatic completion hinting from history
@@ -113,13 +114,14 @@ cargo build --release
 
 **Customization**
 
-- [ ] **Read settings from configuration file**
+- [X] Read settings from configuration file
 - [ ] Optional truecolor support
 - [ ] Simple prompt customization
 
 **Won't do** (Things that will *not* be implemented into `yui`, at least for the time being):
 
-- `for`, `while`, `until`, etc. Any kind of looping - use a proper scripting language for that
+- `for`, `while`, `until`, etc. Any kind of looping  -  use a proper scripting language for that
+	- "What! No for loops?!!. What if I need to loop over a directory of files or something?"  -  Use proper tools meant for that, eg: the `find` command for the directory example
 - Advanced arithmetic, precision above 8-9 digits, trigonometry, etc. - use an appropriate tool for that
 - Advanced/special expansions: `$$`, `${foo/foo/bar}`, `${foo##.*}`, etc. - You should probably be using a proper scripting language if you need these
 
