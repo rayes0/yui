@@ -84,6 +84,10 @@ impl Validator for CustomHelper {
 fn main() {
 	if let Some(arg) = env::args().nth(1) {
 		match arg.as_str() {
+            "-h" | "--help" => {
+                print_help();
+                return;
+            }
 			"-c" => {
 				let mut to_run = String::new();
 				for (i, arg) in env::args().enumerate() {
@@ -215,4 +219,12 @@ fn editor_config() -> Config {
 		.indent_size(conf.indent_size)
 		.bracketed_paste(conf.bracketed_paste)
 		.build()
+}
+
+fn print_help() {
+    println!("yui: A simple and minimal unix shell\n");
+    println!("  USAGE:  yui [OPTIONS] [FILE]\n");
+    println!("  Available options:");
+    println!("    -h, --help     Show this help message");
+    println!("    -c [COMMAND]   Execute the specified command");
 }

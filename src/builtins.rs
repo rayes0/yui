@@ -3,11 +3,11 @@ use std::{env, io::ErrorKind, path::Path};
 
 use crate::paths;
 
-pub fn cd(d: Vec<&String>) {
+pub fn cd(d: &[&String]) {
 	let new_dir;
 	if d.is_empty() {
 		new_dir = paths::get_user_home();
-	} else if d.iter().count() > 2 {
+	} else if d.iter().count() > 1 {
 		eprintln!("yui: cd: Too many arguments");
 		return;
 	} else {
@@ -24,7 +24,7 @@ pub fn cd(d: Vec<&String>) {
 	}
 }
 
-pub fn echo(s: Vec<&String>) {
+pub fn echo(s: &[&String]) {
 	let mut to_print = String::new();
 	for word in s.iter() {
 		to_print.push_str(word);
@@ -33,43 +33,55 @@ pub fn echo(s: Vec<&String>) {
 	println!("{}", to_print.trim());
 }
 
-pub fn export(s: Vec<&String>) {
+pub fn export(s: &[&String]) {
+    let re = Regex::new(r"^([a-zA-Z0-9_]+)=(.*)$").unwrap();
 	for input in s.iter() {
-		if let Ok(re) = Regex::new(r"^([a-zA-Z0-9_]+)=(.*)$") {
-			if !re.is_match(input) {
-				println!("yui: export: invalid usage");
-			}
+		if !re.is_match(input) {
+			eprintln!("yui: export: invalid usage\n  export OPTION=VALUE");
+            break;
+		}
 
-			for cap in re.captures_iter(input) {
-				let name = cap[1].to_string();
-				let value = paths::expand_home(&cap[2]);
-				env::set_var(name, &value);
-			}
-		} else {
-			eprintln!("yui: export: regex error");
+		for cap in re.captures_iter(input) {
+			let name = cap[1].to_string();
+			let value = paths::expand_home(&cap[2]);
+			env::set_var(name, &value);
 		}
 	}
 }
 
-pub fn set(s: Vec<&String>) {
+pub fn set(s: &[&String]) {
+    let re = Regex::new(r"^([a-zA-Z0-9_]+)=(.*)$").unwrap();
 	for input in s.iter() {
-		if let Ok(re) = Regex::new(r"^([a-zA-Z0-9_]+)=(.*)$") {
-			if !re.is_match(input) {
-				eprintln!("yui: set: invalid usage\n  set OPTION=VALUE");
-			}
+		if !re.is_match(input) {
+			eprintln!("yui: set: invalid usage\n  set OPTION=VALUE");
+            break;
+		}
 
-			for cap in re.captures_iter(input) {
-				let name = cap[1].to_string();
-				let value = paths::expand_home(&cap[2]);
-				if crate::config::convert_and_set_key(&name, &value) == false {
-					eprintln!("Invalid option: {}", name);
-				}
+		for cap in re.captures_iter(input) {
+			let name = cap[1].to_string();
+			let value = paths::expand_home(&cap[2]);
+			if crate::config::convert_and_set_key(&name, &value) == false {
+				eprintln!("Invalid option: '{}'", name);
 			}
-		} else {
-			eprintln!("yui: set: regex error");
 		}
 	}
 }
+
+/*pub fn alias(s: &[&String]) {
+    let re = Regex::new(r"^([a-zA-Z0-9_]+)=(.*)$").unwrap();
+	for input in s.iter() {
+		if !re.is_match(input) {
+			eprintln!("yui: alias: invalid usage\n  alias OPTION=VALUE");
+            break;
+		}
+
+		for cap in re.captures_iter(input) {
+			let name = cap[1].to_string();
+			let value = paths::expand_home(&cap[2]);
+			env::set_var(name, &value);
+		}
+	}
+}*/
 
 #[cfg(test)]
 mod tests {
@@ -80,7 +92,7 @@ mod tests {
 	fn cd_basic_test() {
 		let path = "/tmp".to_string();
 		let vec = vec![&path];
-		cd(vec);
+		cd(&vec);
 		let new = env::current_dir().expect("can't get current dir");
 		assert_eq!("/tmp", new.as_os_str().to_str().unwrap());
 	}

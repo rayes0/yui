@@ -1,4 +1,6 @@
 # .yuirc
+# vim: ft=sh
+
 # example config for yui, with the default options
 
 set STARTBLOCK
@@ -21,4 +23,5 @@ bracketed_paste=true
 
 set ENDBLOCK
 
-# vim: ft=sh
+# This file is just a yui script. You can run add commands as well
+# export VAR=VALUE
