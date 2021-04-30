@@ -125,7 +125,9 @@ pub fn split_to_args(line: String) -> ArgTypes {
 		if c == ' ' {
 			if cur_quot.is_empty() {
 				if prev_space == false {
-					args.push(cur_arg.trim().to_string());
+					if !cur_arg.trim().is_empty() {
+						args.push(cur_arg.trim().to_string());
+					}
 					new_cycle = true;
 					prev_space = true;
 				} else {
@@ -143,14 +145,35 @@ pub fn split_to_args(line: String) -> ArgTypes {
 		if c == '&' {
 			if cur_quot.is_empty() {
 				if prev_spchar == '&' {
-					cur_arg.push_str("&&");
+					if !cur_arg.trim().is_empty() {
+						args.push(cur_arg.trim().to_string());
+					}
+					//cur_arg.push_str("&&");
+					args.push("&&".to_string());
 					prev_spchar = ' ';
 					has_op = true;
-					continue;
+					new_cycle = true;
 				} else {
 					prev_spchar = '&';
 					continue;
 				}
+			} else {
+				prev_spchar = ' ';
+				cur_arg.push(c);
+				continue;
+			}
+		}
+
+		// ; Operator
+		if c == ';' {
+			if cur_quot.is_empty() {
+				if !cur_arg.trim().is_empty() {
+					args.push(cur_arg.trim().to_string());
+				}
+				//cur_arg.push_str(";");
+				args.push(";".to_string());
+				has_op = true;
+				new_cycle = true;
 			} else {
 				cur_arg.push(c);
 				continue;
@@ -218,10 +241,10 @@ pub fn split_pipes(all: &[String]) -> Vec<&[String]> {
 	return vec;
 }
 
-// split operators, currently only && for now
+// split operators
 pub fn split_ops(all: &[String]) -> Vec<&[String]> {
 	let mut vec = Vec::new();
-	let iter = all.split(|f| f == &"&&");
+	let iter = all.split(|f| f == "&&" || f == ";");
 	vec.extend(iter);
 	return vec;
 }
@@ -247,6 +270,30 @@ mod tests {
 			vec![
 				vec!["ls".to_string(), "-al".to_string()],
 				vec!["echo".to_string(), "hello space".to_string()]
+			]
+		);
+		assert_eq!(
+			split_ops(&vec![
+				"ls".to_string(),
+				"-al".to_string(),
+				";".to_string(),
+				"ls".to_string()
+			]),
+			vec![vec!["ls".to_string(), "-al".to_string()], vec!["ls".to_string()]]
+		);
+		assert_eq!(
+			split_ops(&vec![
+				"ls".to_string(),
+				"-al".to_string(),
+				";".to_string(),
+				"ls".to_string(),
+				"&&".to_string(),
+				"ls".to_string()
+			]),
+			vec![
+				vec!["ls".to_string(), "-al".to_string()],
+				vec!["ls".to_string()],
+				vec!["ls".to_string()]
 			]
 		);
 	}

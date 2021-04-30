@@ -31,6 +31,7 @@ mod spawn;
 // Initialize global config
 // might make these local and just pass them to each part of the program that needs them in the
 // future
+
 use config::YuiConfig;
 lazy_static! {
 	static ref CONFIG: Mutex<YuiConfig> = Mutex::new(<YuiConfig as Default>::default());
@@ -105,6 +106,7 @@ fn main() {
 					};
 				}
 				spawn::choose_and_run(false, parser::split_to_args(to_run));
+				return;
 			}
 			_ => {
 				let re = Regex::new(r"-.*").unwrap();

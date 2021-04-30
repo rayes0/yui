@@ -60,11 +60,17 @@ impl Default for YuiConfig {
 pub fn aliasblock_parse_and_exec(aliasline: &String) -> bool {
 	let re = Regex::new(r"^([a-zA-Z0-9_]+)=(.*)$").unwrap();
 	if re.is_match(aliasline) {
-		let mut split = aliasline.split("=");
-		let key = split.next().unwrap().to_string();
-		let raw = split.next().unwrap().to_string();
 		let mut all = ALIASES.lock().unwrap();
-		all.insert(key, raw);
+		for mat in re.captures_iter(aliasline) {
+			let alias = mat[1].to_string();
+			let value = mat[2]
+				.trim_start_matches("'")
+				.trim_end_matches("'")
+				.trim_start_matches("\"")
+				.trim_end_matches("\"")
+				.to_string();
+			all.insert(alias, value);
+		}
 		true
 	} else {
 		false

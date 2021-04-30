@@ -130,8 +130,8 @@ fn spawn_piped(all: &[&[String]]) {
 fn spawn_chained(all: &[&[String]]) {
 	for c in all.iter() {
 		let mut iter = c.iter();
-		let mut spawn = Command::new(iter.next().unwrap()).args(iter).spawn().unwrap();
-		if let Err(m) = spawn.wait() {
+		let spawn = Command::new(iter.next().unwrap()).args(iter).spawn();
+		if let Err(m) = spawn.unwrap().wait() {
 			eprintln!("{}", m);
 			break;
 		}

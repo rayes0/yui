@@ -82,7 +82,7 @@ A sample config file is provided in the `examples` directory. For full documenta
 - [ ] `test`, `[`, and `]` for testing conditionals
 	- [ ] `==`, `!=`, `<`, `>`
 - [ ] AND and OR: `&&` and `||`
-- [ ] End of command: `;`
+- [X] End of command: `;`
 - [ ] Basic arithmetic: `+`, `-`, `/`, `*`, `%`
 	- [ ] Follow order of operations
 	- [ ] Float calculations
