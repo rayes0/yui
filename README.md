@@ -32,7 +32,7 @@ cargo build --release
 
 ## Configuration
 
-See [https://github.com/rayes0/yui/wiki/Configuration](https://github.com/rayes0/yui/wiki/Configuration)
+A sample config file is provided in the `examples` directory. For full documentation, see [https://github.com/rayes0/yui/wiki/Configuration](https://github.com/rayes0/yui/wiki/Configuration)
 
 ## Features (Current and Planned)
 

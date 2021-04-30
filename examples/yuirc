@@ -1,8 +1,7 @@
 # .yuirc
 # vim: ft=sh
 
-# example config for yui, with the default options
-
+# Settings block, with the default options..
 set STARTBLOCK
 
 hist_ign_space=true
@@ -23,5 +22,17 @@ bracketed_paste=true
 
 set ENDBLOCK
 
-# This file is just a yui script. You can run add commands as well
+# Specify some aliases..
+alias STARTBLOCK
+
+ls='ls --color=auto'
+ll='ls -al'
+grep='grep --color=auto'
+
+alias ENDBLOCK
+
+# Export some env vars..
 # export VAR=VALUE
+
+# This file is just a yui script. You can run external commands as well.
+echo hello from yuirc!
