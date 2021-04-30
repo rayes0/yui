@@ -1,6 +1,6 @@
 # yui
 
-A simple and *minimal* UNIX shell inspired by bash and fish, written in Rust.
+A simple and *minimal* UNIX shell inspired by Bash and Fish, written in Rust.
 
 `yui` is primarily interactive focused, although it does have a small parser for light scripting. I wrote it mainly to help me learn Rust, and the basics of interfacing and managing UNIX processes.
 
@@ -67,6 +67,7 @@ See [https://github.com/rayes0/yui/wiki/Configuration](https://github.com/rayes0
 - [X] Utilize readline vi or emacs modes to edit lines
 - [ ] Support for multi-line commands (with `\`)
 - [ ] Support using external editor to edit commands
+- [ ] Option for inline alias, variable, and history expansion
 
 **Parser**
 
@@ -101,7 +102,7 @@ See [https://github.com/rayes0/yui/wiki/Configuration](https://github.com/rayes0
 - [X] `exit`
 	- [ ] Specify custom exit code
 - [ ] `history`
-- [ ] `alias`
+- [X] `alias`
 - [ ] `exec`
 - [X] `export` (env vars)
 - [ ] `bind`, to create custom keybinds

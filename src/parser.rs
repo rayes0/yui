@@ -7,12 +7,14 @@ use std::{
 
 //use rustyline::history::History;
 
+//use crate::ALIASES;
 use crate::config;
 use crate::paths;
 
 pub fn parse_file(path: impl AsRef<Path>) {
 	let lines = split_file_lines(path);
 	let mut in_setblock = false;
+	let mut in_aliasblock = false;
 	for (i, s) in lines.iter().enumerate() {
 		if regex::Regex::new(r"^\#.*").unwrap().is_match(&s) {
 			// line is a comment
@@ -29,6 +31,21 @@ pub fn parse_file(path: impl AsRef<Path>) {
 			in_setblock = false;
 			continue;
 		}
+		if s.trim() == "alias STARTBLOCK" {
+			in_aliasblock = true;
+			continue;
+		} else if s.trim() == "alias ENDBLOCK" {
+			in_aliasblock = false;
+			continue;
+		}
+		if in_aliasblock == true {
+			if config::aliasblock_parse_and_exec(s) == false {
+				eprintln!("yuirc: Line: {}, Invalid syntax: \"{}\"", i, s);
+				return;
+			} else {
+				continue;
+			}
+		}
 		if in_setblock == true {
 			if config::setblock_parse_and_exec(s) == false {
 				eprintln!("yuirc: Line: {}, Invalid syntax: \"{}\"", i, s);
@@ -37,7 +54,7 @@ pub fn parse_file(path: impl AsRef<Path>) {
 				continue;
 			}
 		}
-		crate::spawn::choose_and_run(split_to_args(s.to_string()));
+		crate::spawn::choose_and_run(false, split_to_args(s.to_string()));
 	}
 }
 

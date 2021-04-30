@@ -1,6 +1,7 @@
 use regex::Regex;
 use std::{
 	borrow::Cow::{self, Borrowed, Owned},
+	collections::HashMap,
 	env,
 	fs::File,
 	process::exit,
@@ -28,9 +29,12 @@ mod paths;
 mod spawn;
 
 // Initialize global config
+// might make these local and just pass them to each part of the program that needs them in the
+// future
 use config::YuiConfig;
 lazy_static! {
 	static ref CONFIG: Mutex<YuiConfig> = Mutex::new(<YuiConfig as Default>::default());
+	static ref ALIASES: Mutex<HashMap<String, String>> = Mutex::new(HashMap::new());
 }
 
 #[derive(Helper)]
@@ -84,10 +88,10 @@ impl Validator for CustomHelper {
 fn main() {
 	if let Some(arg) = env::args().nth(1) {
 		match arg.as_str() {
-            "-h" | "--help" => {
-                print_help();
-                return;
-            }
+			"-h" | "--help" => {
+				print_help();
+				return;
+			}
 			"-c" => {
 				let mut to_run = String::new();
 				for (i, arg) in env::args().enumerate() {
@@ -100,7 +104,7 @@ fn main() {
 						to_run.push_str(arg.as_str());
 					};
 				}
-				spawn::choose_and_run(parser::split_to_args(to_run));
+				spawn::choose_and_run(false, parser::split_to_args(to_run));
 			}
 			_ => {
 				let re = Regex::new(r"-.*").unwrap();
@@ -151,7 +155,10 @@ fn repl(hist: &String) -> bool {
 
 		match readline {
 			Ok(line) => {
-				rl.add_history_entry(line.as_str());
+				//let mut conf = CONFIG.lock().unwrap();
+				//if conf.auto_add_history == false {
+				//    rl.add_history_entry(line.as_str());
+				//}
 
 				if line.trim() == "exit" {
 					println!("Goodbye!");
@@ -165,11 +172,11 @@ fn repl(hist: &String) -> bool {
 					continue;
 				//TODO: Make this more reliable by matching later
 				} else if regex::Regex::new(r"^set\s.*").unwrap().is_match(&line.trim()) {
-					spawn::choose_and_run(parser::split_to_args(line));
+					spawn::choose_and_run(true, parser::split_to_args(line));
 					break true; // need to reload the line editor
 				}
 
-				spawn::choose_and_run(parser::split_to_args(line));
+				spawn::choose_and_run(true, parser::split_to_args(line));
 			}
 			Err(ReadlineError::Interrupted) => {
 				println!("^c");
@@ -222,9 +229,9 @@ fn editor_config() -> Config {
 }
 
 fn print_help() {
-    println!("yui: A simple and minimal unix shell\n");
-    println!("  USAGE:  yui [OPTIONS] [FILE]\n");
-    println!("  Available options:");
-    println!("    -h, --help     Show this help message");
-    println!("    -c [COMMAND]   Execute the specified command");
+	println!("yui: A simple and minimal unix shell\n");
+	println!("  USAGE:  yui [OPTIONS] [FILE]\n");
+	println!("  Available options:");
+	println!("    -h, --help     Show this help message");
+	println!("    -c [COMMAND]   Execute the specified command");
 }

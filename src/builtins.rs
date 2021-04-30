@@ -2,6 +2,7 @@ use regex::Regex;
 use std::{env, io::ErrorKind, path::Path};
 
 use crate::paths;
+use crate::ALIASES;
 
 pub fn cd(d: &[&String]) {
 	let new_dir;
@@ -11,7 +12,11 @@ pub fn cd(d: &[&String]) {
 		eprintln!("yui: cd: Too many arguments");
 		return;
 	} else {
-		new_dir = d.into_iter().peekable().peek().map_or("/".to_string(), |x| (*x).to_string());
+		new_dir = d
+			.into_iter()
+			.peekable()
+			.peek()
+			.map_or("/".to_string(), |x| (*x).to_string());
 	};
 	let final_path = new_dir;
 	let root = Path::new(&final_path);
@@ -34,11 +39,11 @@ pub fn echo(s: &[&String]) {
 }
 
 pub fn export(s: &[&String]) {
-    let re = Regex::new(r"^([a-zA-Z0-9_]+)=(.*)$").unwrap();
+	let re = Regex::new(r"^([a-zA-Z0-9_]+)=(.*)$").unwrap();
 	for input in s.iter() {
 		if !re.is_match(input) {
 			eprintln!("yui: export: invalid usage\n  export OPTION=VALUE");
-            break;
+			break;
 		}
 
 		for cap in re.captures_iter(input) {
@@ -50,11 +55,11 @@ pub fn export(s: &[&String]) {
 }
 
 pub fn set(s: &[&String]) {
-    let re = Regex::new(r"^([a-zA-Z0-9_]+)=(.*)$").unwrap();
+	let re = Regex::new(r"^([a-zA-Z0-9_]+)=(.*)$").unwrap();
 	for input in s.iter() {
 		if !re.is_match(input) {
 			eprintln!("yui: set: invalid usage\n  set OPTION=VALUE");
-            break;
+			break;
 		}
 
 		for cap in re.captures_iter(input) {
@@ -67,21 +72,34 @@ pub fn set(s: &[&String]) {
 	}
 }
 
-/*pub fn alias(s: &[&String]) {
-    let re = Regex::new(r"^([a-zA-Z0-9_]+)=(.*)$").unwrap();
+pub fn alias(s: &[&String]) {
+	if s.is_empty() {
+		let map = ALIASES.lock().unwrap();
+		if map.is_empty() {
+			println!("No aliases set");
+		} else {
+			for (k, v) in map.iter() {
+				println!("Currently set aliases:");
+				println!("{}={}", k, v);
+				return;
+			}
+		}
+	}
+	let re = Regex::new(r"^([a-zA-Z0-9_]+)=(.*)$").unwrap();
+	let mut all = ALIASES.lock().unwrap();
 	for input in s.iter() {
 		if !re.is_match(input) {
-			eprintln!("yui: alias: invalid usage\n  alias OPTION=VALUE");
-            break;
+			eprintln!("yui: alias: invalid usage\n  alias OPTION=VALUE OPTION=VALUE ...");
+			break;
 		}
 
 		for cap in re.captures_iter(input) {
 			let name = cap[1].to_string();
-			let value = paths::expand_home(&cap[2]);
-			env::set_var(name, &value);
+			let value = cap[2].to_string();
+			all.insert(name, value);
 		}
 	}
-}*/
+}
 
 #[cfg(test)]
 mod tests {

@@ -3,12 +3,13 @@ use std::process::{Command, Stdio};
 
 use crate::builtins;
 use crate::parser;
+use crate::ALIASES;
 
-pub fn choose_and_run(raw: parser::ArgTypes) {
+pub fn choose_and_run(int: bool, raw: parser::ArgTypes) {
 	match raw {
 		parser::ArgTypes::Norm(data, false) => {
 			// normal command
-			spawn_cmd(&data);
+			spawn_cmd(int, &data);
 		}
 		parser::ArgTypes::Piped(data, false) => {
 			// contains one or more pipes
@@ -28,8 +29,20 @@ pub fn choose_and_run(raw: parser::ArgTypes) {
 	};
 }
 
-pub fn spawn_cmd(c: &[String]) {
-	let mut cmd_split = c.iter();
+pub fn spawn_cmd(int: bool, raw: &[String]) {
+	let mut cmd: Vec<String>;
+	if let Some(d) = check_aliases(&raw[0]) {
+		if int == true {
+			// only expand aliases in interactive mode
+			cmd = raw.to_vec();
+			let _ = cmd.splice(..1, d.iter().cloned());
+		} else {
+			cmd = raw.to_vec();
+		}
+	} else {
+		cmd = raw.to_vec();
+	}
+	let mut cmd_split = cmd.iter();
 	let cmd = cmd_split.next().unwrap(); // first one will be the command
 	let args = cmd_split.clone();
 	// check for builtins
@@ -132,11 +145,29 @@ fn check_builtins(c: &str, a: &[&String]) -> bool {
 		"echo" => builtins::echo(&args),
 		"export" => builtins::export(&args),
 		"set" => builtins::set(&args),
-        //"alias" => builtins::alias(&args),
+		"alias" => builtins::alias(&args),
 		//"history" => builtins::history(),
-		"version" => println!("yui, version 0.0\nA bash-like shell focused on speed and simplicity.\n"),
+		"version" => {
+			println!("yui, version 0.0\nA bash-like shell focused on speed and simplicity.\n")
+		}
 		"builtins" => println!("Builtin commands:\ncd\necho\nversion\nexport\nset\nexit"),
 		_ => return false,
 	}
 	true
+}
+
+fn check_aliases(c: &String) -> Option<Vec<String>> {
+	//let text = &c.to_string();
+	let aliases = ALIASES.lock().unwrap();
+	if aliases.contains_key(c) {
+		let key = &aliases[c];
+		if let parser::ArgTypes::Norm(c, _) = parser::split_to_args(key.to_string()) {
+			Some(c)
+		} else {
+			None // should never happen
+		}
+	} else {
+		//c.to_string()
+		None
+	}
 }
