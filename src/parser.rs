@@ -121,6 +121,17 @@ pub fn split_to_args(line: String) -> ArgTypes {
 			}
 		}
 
+		// Expand home
+		if c == '~' && prev_space == true {
+			if cur_quot.is_empty() {
+				cur_arg.push_str(&paths::get_user_home());
+				continue;
+			} else {
+				cur_arg.push('~');
+				continue;
+			}
+		}
+
 		// Spaces
 		if c == ' ' {
 			if cur_quot.is_empty() {
@@ -193,17 +204,6 @@ pub fn split_to_args(line: String) -> ArgTypes {
 				cur_arg.push('!');
 			}
 		}*/
-
-		// Expand home
-		if c == '~' {
-			if cur_quot.is_empty() {
-				cur_arg.push_str(&paths::get_user_home());
-				continue;
-			} else {
-				cur_arg.push('~');
-				continue;
-			}
-		}
 
 		if new_cycle == true {
 			cur_arg = String::new();

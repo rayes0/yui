@@ -6,6 +6,7 @@ use std::{
 	fs::File,
 	process::exit,
 };
+//use libc;
 
 use lazy_static::lazy_static;
 use std::sync::Mutex;
@@ -93,6 +94,10 @@ fn main() {
 				print_help();
 				return;
 			}
+            "-v" | "--version" => {
+                println!("yui 0.1");
+                return;
+            }
 			"-c" => {
 				let mut to_run = String::new();
 				for (i, arg) in env::args().enumerate() {
@@ -200,8 +205,6 @@ fn repl(hist: &String) -> bool {
 		false
 	}
 }
-
-// Have to customize these functions once we get a config file
 
 fn get_prompt() -> String {
 	let pre = ">> ";

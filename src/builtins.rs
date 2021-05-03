@@ -78,11 +78,11 @@ pub fn alias(s: &[&String]) {
 		if map.is_empty() {
 			println!("No aliases set");
 		} else {
+			println!("Currently set aliases:");
 			for (k, v) in map.iter() {
-				println!("Currently set aliases:");
-				println!("{}={}", k, v);
-				return;
+				println!("  {}={}", k, v);
 			}
+			return;
 		}
 	}
 	let re = Regex::new(r"^([a-zA-Z0-9_]+)=(.*)$").unwrap();
