@@ -10,8 +10,9 @@ use std::{
 //use crate::ALIASES;
 use crate::config;
 use crate::paths;
+use crate::context::Context;
 
-pub fn parse_file(path: impl AsRef<Path>) {
+pub fn parse_file(mut ctx: Context, path: impl AsRef<Path>) {
 	let lines = split_file_lines(path);
 	let mut in_setblock = false;
 	let mut in_aliasblock = false;
@@ -39,7 +40,7 @@ pub fn parse_file(path: impl AsRef<Path>) {
 			continue;
 		}
 		if in_aliasblock == true {
-			if config::aliasblock_parse_and_exec(s) == false {
+			if config::aliasblock_parse_and_exec(ctx, s) == false {
 				eprintln!("yuirc: Line: {}, Invalid syntax: \"{}\"", i, s);
 				return;
 			} else {
@@ -47,7 +48,7 @@ pub fn parse_file(path: impl AsRef<Path>) {
 			}
 		}
 		if in_setblock == true {
-			if config::setblock_parse_and_exec(s) == false {
+			if config::setblock_parse_and_exec(ctx, s) == false {
 				eprintln!("yuirc: Line: {}, Invalid syntax: \"{}\"", i, s);
 				return;
 			} else {

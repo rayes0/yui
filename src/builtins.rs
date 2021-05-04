@@ -1,5 +1,5 @@
 use regex::Regex;
-use std::{env, io::ErrorKind, path::Path};
+use std::{env, io::{ErrorKind, BufReader}, path::Path};
 
 use crate::paths;
 use crate::ALIASES;
@@ -100,6 +100,16 @@ pub fn alias(s: &[&String]) {
 		}
 	}
 }
+
+//pub fn history(s: &[&String]) {
+   //if s.is_empty() {
+       //let reader = BufReader::new(histfile);
+       //for (i, l) in reader.lines().enumerate() {
+            //println!("{}: {}", i, l);
+       //}
+   //} else if s.get(0) == "clear" {
+   //}
+//}
 
 #[cfg(test)]
 mod tests {

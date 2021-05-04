@@ -1,91 +1,43 @@
 use regex::Regex;
 use std::{
-	borrow::Cow::{self, Borrowed, Owned},
-	collections::HashMap,
+	//collections::HashMap,
 	env,
 	fs::File,
 	process::exit,
 };
 //use libc;
 
-use lazy_static::lazy_static;
-use std::sync::Mutex;
+//use lazy_static::lazy_static;
+//use std::sync::Mutex;
 
 use rustyline::error::ReadlineError;
-use rustyline::{Config, Context, Editor};
+use rustyline::{
+    Config,
+    Editor,
+    completion::FilenameCompleter,
+    highlight::MatchingBracketHighlighter,
+    hint::HistoryHinter,
+    validate::MatchingBracketValidator,
+
+};
 
 use colored::*;
-use rustyline::{
-	completion::{Completer, FilenameCompleter, Pair},
-	highlight::{Highlighter, MatchingBracketHighlighter},
-	hint::{Hinter, HistoryHinter},
-	validate::{self, MatchingBracketValidator, ValidationContext, Validator},
-};
-use rustyline_derive::Helper;
 
 mod builtins;
 mod config;
+mod context;
+mod helper;
 mod parser;
 mod paths;
 mod spawn;
 
-// Initialize global config
-// might make these local and just pass them to each part of the program that needs them in the
-// future
-
+use helper::CustomHelper;
 use config::YuiConfig;
-lazy_static! {
-	static ref CONFIG: Mutex<YuiConfig> = Mutex::new(<YuiConfig as Default>::default());
-	static ref ALIASES: Mutex<HashMap<String, String>> = Mutex::new(HashMap::new());
-}
 
-#[derive(Helper)]
-struct CustomHelper {
-	completer: FilenameCompleter,
-	highlighter: MatchingBracketHighlighter,
-	validator: MatchingBracketValidator,
-	hinter: HistoryHinter,
-	styled_prompt: String,
-}
-
-impl Completer for CustomHelper {
-	type Candidate = Pair;
-	fn complete(&self, line: &str, pos: usize, ctx: &Context<'_>) -> Result<(usize, Vec<Pair>), ReadlineError> {
-		self.completer.complete(line, pos, ctx)
-	}
-}
-
-impl Highlighter for CustomHelper {
-	fn highlight_prompt<'b, 's: 'b, 'p: 'b>(&'s self, prompt: &'p str, default: bool) -> Cow<'b, str> {
-		if default {
-			Borrowed(&self.styled_prompt)
-		} else {
-			Borrowed(prompt)
-		}
-	}
-	fn highlight_hint<'h>(&self, hint: &'h str) -> Cow<'h, str> {
-		Owned(hint.color(CONFIG.lock().unwrap().hinting_color).to_string())
-	}
-	fn highlight<'l>(&self, line: &'l str, pos: usize) -> Cow<'l, str> {
-		self.highlighter.highlight(line, pos)
-	}
-	fn highlight_char(&self, line: &str, pos: usize) -> bool {
-		self.highlighter.highlight_char(line, pos)
-	}
-}
-
-impl Hinter for CustomHelper {
-	type Hint = String;
-	fn hint(&self, line: &str, pos: usize, ctx: &Context<'_>) -> Option<String> {
-		self.hinter.hint(line, pos, ctx)
-	}
-}
-
-impl Validator for CustomHelper {
-	fn validate(&self, ctx: &mut ValidationContext<'_>) -> rustyline::Result<validate::ValidationResult> {
-		self.validator.validate(ctx)
-	}
-}
+//lazy_static! {
+	//static ref CONFIG: Mutex<YuiConfig> = Mutex::new(<YuiConfig as Default>::default());
+	//static ref ALIASES: Mutex<HashMap<String, String>> = Mutex::new(HashMap::new());
+//}
 
 fn main() {
 	if let Some(arg) = env::args().nth(1) {
@@ -119,27 +71,20 @@ fn main() {
 					eprintln!("Invalid arg: {}", arg);
 					return;
 				} else {
-					parser::parse_file(arg);
+					parser::parse_file(context::Context::new(), arg);
 				}
 			}
 		}
 	}
 
+    // Initialize config
+    let mut context = context::Context::new();
 	if let Some(f) = paths::get_user_config() {
-		parser::parse_file(f);
+		parser::parse_file(context, f);
 	}
 
 	let histpath: String = [paths::get_user_home(), ".yui_history".to_string()].join("/");
-	loop {
-		if repl(&histpath) == true {
-			continue;
-		} else {
-			break;
-		}
-	}
-}
 
-fn repl(hist: &String) -> bool {
 	let helper = CustomHelper {
 		completer: FilenameCompleter::new(),
 		highlighter: MatchingBracketHighlighter::new(),
@@ -148,6 +93,16 @@ fn repl(hist: &String) -> bool {
 		styled_prompt: "".to_owned(),
 	};
 
+	loop {
+		if repl(&histpath, helper) == true {
+			continue;
+		} else {
+			break;
+		}
+	}
+}
+
+fn repl(hist: &String, helper: CustomHelper) -> bool {
 	let mut rl = Editor::with_config(editor_config());
 	rl.set_helper(Some(helper));
 	if rl.load_history(hist).is_err() {
@@ -171,10 +126,10 @@ fn repl(hist: &String) -> bool {
 					println!("Goodbye!");
 					rl.save_history(hist).unwrap();
 					exit(0);
-				} else if line.trim() == "" {
+				}else if line.trim() == "" {
 					// line is empty or whitespace only
 					continue;
-				} else if regex::Regex::new(r"^\#.*").unwrap().is_match(&line) {
+				} else if line.trim().starts_with('#') {
 					// line is a comment
 					continue;
 				//TODO: Make this more reliable by matching later

@@ -4,8 +4,9 @@ use std::process::exit;
 
 use regex::Regex;
 
-use crate::ALIASES;
-use crate::CONFIG;
+//use crate::ALIASES;
+//use crate::CONFIG;
+use crate::config::Context;
 use rustyline::config::*;
 use rustyline::config::{
 	//BellStyle::*,
@@ -37,7 +38,7 @@ pub struct YuiConfig {
 // Define defaults here
 impl Default for YuiConfig {
 	fn default() -> Self {
-		YuiConfig {
+		Self {
 			hist_ign_space: true,
 			hist_ign_dups: false,
 			hist_max_size: 1000,
@@ -57,10 +58,9 @@ impl Default for YuiConfig {
 	}
 }
 
-pub fn aliasblock_parse_and_exec(aliasline: &String) -> bool {
+pub fn aliasblock_parse_and_exec(&mut ctx: Context, aliasline: &String) -> bool {
 	let re = Regex::new(r"^([a-zA-Z0-9_]+)=(.*)$").unwrap();
 	if re.is_match(aliasline) {
-		let mut all = ALIASES.lock().unwrap();
 		for mat in re.captures_iter(aliasline) {
 			let alias = mat[1].to_string();
 			let value = mat[2]
@@ -69,42 +69,42 @@ pub fn aliasblock_parse_and_exec(aliasline: &String) -> bool {
 				.trim_start_matches("\"")
 				.trim_end_matches("\"")
 				.to_string();
-			all.insert(alias, value);
+			ctx.new_alias(alias, value);
 		}
-		true
+        true
 	} else {
-		false
+        false
 	}
 }
 
-pub fn setblock_parse_and_exec(setline: &String) -> bool {
+pub fn setblock_parse_and_exec(mut ctx: Context, setline: &String) -> bool {
 	let mut split = setline.split("=");
 	let key = split.next().unwrap();
 	let raw = split.next().unwrap();
-	convert_and_set_key(&key, &raw)
+	convert_and_set_key(ctx, &key, &raw)
 }
 
-pub fn convert_and_set_key(key: &str, raw: &str) -> bool {
+pub fn convert_and_set_key(mut ctx: Context, key: &str, raw: &str) -> bool {
 	// TODO: find cleaner way to do this?
 	match key {
-		"hist_ign_space" => CONFIG.lock().unwrap().hist_ign_space = string_to_type(raw, &"boolean").into(),
-		"hist_ign_dups" => CONFIG.lock().unwrap().hist_ign_dups = string_to_type(raw, &"boolean").into(),
-		"hist_max_size" => CONFIG.lock().unwrap().hist_max_size = string_to_type(raw, &"size").into(),
-		"completion_type" => CONFIG.lock().unwrap().completion_type = string_to_type(raw, &"complete").into(),
-		"completion_limit" => CONFIG.lock().unwrap().completion_limit = string_to_type(raw, &"size").into(),
-		"hinting_color" => CONFIG.lock().unwrap().hinting_color = string_to_type(raw, &"colorname").into(),
-		"keyseq_timeout" => CONFIG.lock().unwrap().keyseq_timeout = string_to_type(raw, &"int32").into(),
-		"edit_mode" => CONFIG.lock().unwrap().edit_mode = string_to_type(raw, &"edit").into(),
-		"auto_add_history" => CONFIG.lock().unwrap().auto_add_history = string_to_type(raw, &"boolean").into(),
-		"bell_style" => CONFIG.lock().unwrap().bell_style = string_to_type(raw, &"bell").into(),
-		"color_mode" => CONFIG.lock().unwrap().color_mode = string_to_type(raw, &"color").into(),
-		"tab_stop" => CONFIG.lock().unwrap().tab_stop = string_to_type(raw, &"size").into(),
-		"check_cur_pos" => CONFIG.lock().unwrap().check_cur_pos = string_to_type(raw, &"boolean").into(),
-		"indent_size" => CONFIG.lock().unwrap().indent_size = string_to_type(raw, &"size").into(),
-		"bracketed_paste" => CONFIG.lock().unwrap().bracketed_paste = string_to_type(raw, &"boolean").into(),
+		"hist_ign_space" => ctx.config.hist_ign_space = string_to_type(raw, &"boolean").into(),
+		"hist_ign_dups" => ctx.config.hist_ign_dups = string_to_type(raw, &"boolean").into(),
+		"hist_max_size" => ctx.config.hist_max_size = string_to_type(raw, &"size").into(),
+		"completion_type" => ctx.config.completion_type = string_to_type(raw, &"complete").into(),
+		"completion_limit" => ctx.config.completion_limit = string_to_type(raw, &"size").into(),
+		"hinting_color" => ctx.config.hinting_color = string_to_type(raw, &"colorname").into(),
+		"keyseq_timeout" => ctx.config.keyseq_timeout = string_to_type(raw, &"int32").into(),
+		"edit_mode" => ctx.config.edit_mode = string_to_type(raw, &"edit").into(),
+		"auto_add_history" => ctx.config.auto_add_history = string_to_type(raw, &"boolean").into(),
+		"bell_style" => ctx.config.bell_style = string_to_type(raw, &"bell").into(),
+		"color_mode" => ctx.config.color_mode = string_to_type(raw, &"color").into(),
+		"tab_stop" => ctx.config.tab_stop = string_to_type(raw, &"size").into(),
+		"check_cur_pos" => ctx.config.check_cur_pos = string_to_type(raw, &"boolean").into(),
+		"indent_size" => ctx.config.indent_size = string_to_type(raw, &"size").into(),
+		"bracketed_paste" => ctx.config.bracketed_paste = string_to_type(raw, &"boolean").into(),
 		_ => return false,
 	}
-	true
+    true
 }
 
 // We have to convert the strings in the config to appropriate types

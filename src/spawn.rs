@@ -138,7 +138,7 @@ fn spawn_chained(all: &[&[String]]) {
 	}
 }
 
-fn check_builtins(c: &str, a: &[&String]) -> bool {
+fn check_builtins(c: &str, a: &[&String], ) -> bool {
 	let args = a.to_vec();
 	match c {
 		"cd" => builtins::cd(&args),
@@ -146,7 +146,7 @@ fn check_builtins(c: &str, a: &[&String]) -> bool {
 		"export" => builtins::export(&args),
 		"set" => builtins::set(&args),
 		"alias" => builtins::alias(&args),
-		//"history" => builtins::history(),
+		//"history" => builtins::history(&args),
 		"version" => {
 			println!("yui, version 0.0\nA bash-like shell focused on speed and simplicity.\n")
 		}
