@@ -1,14 +1,13 @@
-use regex::Regex;
 use std::{
 	//collections::HashMap,
 	env,
 	fs::File,
 	process::exit,
 };
-//use libc;
 
-//use lazy_static::lazy_static;
-//use std::sync::Mutex;
+//use libc;
+use regex::Regex;
+use lazy_static::lazy_static;
 
 use rustyline::error::ReadlineError;
 use rustyline::{
@@ -32,12 +31,11 @@ mod paths;
 mod spawn;
 
 use helper::CustomHelper;
-use config::YuiConfig;
+use context::Context;
 
-//lazy_static! {
-	//static ref CONFIG: Mutex<YuiConfig> = Mutex::new(<YuiConfig as Default>::default());
-	//static ref ALIASES: Mutex<HashMap<String, String>> = Mutex::new(HashMap::new());
-//}
+lazy_static! {
+    static ref CHANGE_SET: Regex = Regex::new(r"^set\s.*").unwrap();
+}
 
 fn main() {
 	if let Some(arg) = env::args().nth(1) {
@@ -62,7 +60,8 @@ fn main() {
 						to_run.push_str(arg.as_str());
 					};
 				}
-				spawn::choose_and_run(false, parser::split_to_args(to_run));
+                let mut context = context::Context::new();
+				spawn::choose_and_run(&mut context, false, parser::split_to_args(to_run));
 				return;
 			}
 			_ => {
@@ -71,7 +70,7 @@ fn main() {
 					eprintln!("Invalid arg: {}", arg);
 					return;
 				} else {
-					parser::parse_file(context::Context::new(), arg);
+					parser::parse_file(&mut context::Context::new(), arg);
 				}
 			}
 		}
@@ -80,21 +79,11 @@ fn main() {
     // Initialize config
     let mut context = context::Context::new();
 	if let Some(f) = paths::get_user_config() {
-		parser::parse_file(context, f);
+		parser::parse_file(&mut context, f);
 	}
 
-	let histpath: String = [paths::get_user_home(), ".yui_history".to_string()].join("/");
-
-	let helper = CustomHelper {
-		completer: FilenameCompleter::new(),
-		highlighter: MatchingBracketHighlighter::new(),
-		validator: MatchingBracketValidator::new(),
-		hinter: HistoryHinter {},
-		styled_prompt: "".to_owned(),
-	};
-
 	loop {
-		if repl(&histpath, helper) == true {
+		if repl(&mut context) == true {
 			continue;
 		} else {
 			break;
@@ -102,11 +91,18 @@ fn main() {
 	}
 }
 
-fn repl(hist: &String, helper: CustomHelper) -> bool {
-	let mut rl = Editor::with_config(editor_config());
+fn repl(ctx: &mut Context) -> bool {
+	let helper = CustomHelper {
+		completer: FilenameCompleter::new(),
+		highlighter: MatchingBracketHighlighter::new(),
+		validator: MatchingBracketValidator::new(),
+		hinter: HistoryHinter {},
+		styled_prompt: "".to_owned(),
+	};
+	let mut rl = Editor::with_config(editor_config(ctx.clone()));
 	rl.set_helper(Some(helper));
-	if rl.load_history(hist).is_err() {
-		File::create(hist).expect("Could not create history file");
+	if rl.load_history(&ctx.histfile).is_err() {
+		File::create(&ctx.histfile).expect("Could not create history file");
 	}
 
 	// REPL
@@ -124,21 +120,21 @@ fn repl(hist: &String, helper: CustomHelper) -> bool {
 
 				if line.trim() == "exit" {
 					println!("Goodbye!");
-					rl.save_history(hist).unwrap();
+					rl.save_history(&ctx.histfile).unwrap();
 					exit(0);
-				}else if line.trim() == "" {
+				} else if line.trim() == "" {
 					// line is empty or whitespace only
 					continue;
 				} else if line.trim().starts_with('#') {
 					// line is a comment
 					continue;
 				//TODO: Make this more reliable by matching later
-				} else if regex::Regex::new(r"^set\s.*").unwrap().is_match(&line.trim()) {
-					spawn::choose_and_run(true, parser::split_to_args(line));
+				} else if CHANGE_SET.is_match(&line.trim()) {
+					spawn::choose_and_run(ctx, true, parser::split_to_args(line));
 					break true; // need to reload the line editor
-				}
-
-				spawn::choose_and_run(true, parser::split_to_args(line));
+				} else {
+				    spawn::choose_and_run(ctx, true, parser::split_to_args(line));
+                }
 			}
 			Err(ReadlineError::Interrupted) => {
 				println!("^c");
@@ -146,7 +142,7 @@ fn repl(hist: &String, helper: CustomHelper) -> bool {
 			// exit on ^d
 			Err(ReadlineError::Eof) => {
 				println!("^d... Goodbye!");
-				rl.save_history(hist).unwrap();
+				rl.save_history(&ctx.histfile).unwrap();
 				break false;
 			}
 			Err(e) => {
@@ -168,8 +164,9 @@ fn get_prompt() -> String {
 	return [pre, &cwd[..], post].join("");
 }
 
-fn editor_config() -> Config {
-	let conf = CONFIG.lock().unwrap();
+fn editor_config(ctx: Context) -> Config {
+	//let conf = CONFIG.lock().unwrap();
+    let conf = ctx.config;
 	Config::builder()
 		.max_history_size(conf.hist_max_size)
 		.history_ignore_dups(conf.hist_ign_dups)

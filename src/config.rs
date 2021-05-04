@@ -2,11 +2,12 @@ use std::convert::Into;
 use std::default::Default;
 use std::process::exit;
 
-use regex::Regex;
+//use regex::Regex;
 
 //use crate::ALIASES;
 //use crate::CONFIG;
-use crate::config::Context;
+use crate::context::Context;
+use crate::builtins::CHECK_EQ;
 use rustyline::config::*;
 use rustyline::config::{
 	//BellStyle::*,
@@ -17,6 +18,7 @@ use rustyline::config::{
 
 use colored::Color;
 
+#[derive(Clone)]
 pub struct YuiConfig {
 	pub hist_ign_space: bool,
 	pub hist_ign_dups: bool,
@@ -58,10 +60,9 @@ impl Default for YuiConfig {
 	}
 }
 
-pub fn aliasblock_parse_and_exec(&mut ctx: Context, aliasline: &String) -> bool {
-	let re = Regex::new(r"^([a-zA-Z0-9_]+)=(.*)$").unwrap();
-	if re.is_match(aliasline) {
-		for mat in re.captures_iter(aliasline) {
+pub fn aliasblock_parse_and_exec(ctx: &mut Context, aliasline: &String) -> bool {
+	if CHECK_EQ.is_match(aliasline) {
+		for mat in CHECK_EQ.captures_iter(aliasline) {
 			let alias = mat[1].to_string();
 			let value = mat[2]
 				.trim_start_matches("'")
@@ -77,14 +78,14 @@ pub fn aliasblock_parse_and_exec(&mut ctx: Context, aliasline: &String) -> bool 
 	}
 }
 
-pub fn setblock_parse_and_exec(mut ctx: Context, setline: &String) -> bool {
+pub fn setblock_parse_and_exec(ctx: &mut Context, setline: &String) -> bool {
 	let mut split = setline.split("=");
 	let key = split.next().unwrap();
 	let raw = split.next().unwrap();
 	convert_and_set_key(ctx, &key, &raw)
 }
 
-pub fn convert_and_set_key(mut ctx: Context, key: &str, raw: &str) -> bool {
+pub fn convert_and_set_key(ctx: &mut Context, key: &str, raw: &str) -> bool {
 	// TODO: find cleaner way to do this?
 	match key {
 		"hist_ign_space" => ctx.config.hist_ign_space = string_to_type(raw, &"boolean").into(),

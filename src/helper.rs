@@ -8,15 +8,15 @@ use rustyline::{
     error::ReadlineError,
 };
 use rustyline_derive::Helper;
-use colored::*;
+//use colored::*;
 
 #[derive(Helper)]
 pub struct CustomHelper {
-	completer: FilenameCompleter,
-	highlighter: MatchingBracketHighlighter,
-	validator: MatchingBracketValidator,
-	hinter: HistoryHinter,
-	styled_prompt: String,
+	pub completer: FilenameCompleter,
+	pub highlighter: MatchingBracketHighlighter,
+	pub validator: MatchingBracketValidator,
+	pub hinter: HistoryHinter,
+	pub styled_prompt: String,
 }
 
 impl Completer for CustomHelper {
@@ -35,7 +35,8 @@ impl Highlighter for CustomHelper {
 		}
 	}
 	fn highlight_hint<'h>(&self, hint: &'h str) -> Cow<'h, str> {
-		Owned(hint.color(CONFIG.lock().unwrap().hinting_color).to_string())
+		//Owned(hint.color(.hinting_color).to_string())
+        Owned(hint.to_string())
 	}
 	fn highlight<'l>(&self, line: &'l str, pos: usize) -> Cow<'l, str> {
 		self.highlighter.highlight(line, pos)

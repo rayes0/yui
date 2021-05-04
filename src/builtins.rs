@@ -1,8 +1,15 @@
 use regex::Regex;
-use std::{env, io::{ErrorKind, BufReader}, path::Path};
+use lazy_static::lazy_static;
+use std::{env, io::{ErrorKind, BufReader, BufRead}, fs::File, path::Path};
 
 use crate::paths;
-use crate::ALIASES;
+use crate::Context;
+//use crate::ALIASES;
+
+// Initialize this now to avoid recompilation every time its used
+lazy_static! {
+    pub static ref CHECK_EQ: Regex = Regex::new(r"^([a-zA-Z0-9_]+)=(.*)$").unwrap();
+}
 
 pub fn cd(d: &[&String]) {
 	let new_dir;
@@ -39,14 +46,13 @@ pub fn echo(s: &[&String]) {
 }
 
 pub fn export(s: &[&String]) {
-	let re = Regex::new(r"^([a-zA-Z0-9_]+)=(.*)$").unwrap();
 	for input in s.iter() {
-		if !re.is_match(input) {
+		if !CHECK_EQ.is_match(input) {
 			eprintln!("yui: export: invalid usage\n  export OPTION=VALUE");
 			break;
 		}
 
-		for cap in re.captures_iter(input) {
+		for cap in CHECK_EQ.captures_iter(input) {
 			let name = cap[1].to_string();
 			let value = paths::expand_home(&cap[2]);
 			env::set_var(name, &value);
@@ -54,27 +60,26 @@ pub fn export(s: &[&String]) {
 	}
 }
 
-pub fn set(s: &[&String]) {
-	let re = Regex::new(r"^([a-zA-Z0-9_]+)=(.*)$").unwrap();
+pub fn set(ctx: &mut Context, s: &[&String]) {
 	for input in s.iter() {
-		if !re.is_match(input) {
+		if !CHECK_EQ.is_match(input) {
 			eprintln!("yui: set: invalid usage\n  set OPTION=VALUE");
 			break;
 		}
 
-		for cap in re.captures_iter(input) {
+		for cap in CHECK_EQ.captures_iter(input) {
 			let name = cap[1].to_string();
 			let value = paths::expand_home(&cap[2]);
-			if crate::config::convert_and_set_key(&name, &value) == false {
+			if crate::config::convert_and_set_key(ctx, &name, &value) == false {
 				eprintln!("Invalid option: '{}'", name);
 			}
 		}
 	}
 }
 
-pub fn alias(s: &[&String]) {
+pub fn alias(ctx: &mut Context, s: &[&String]) {
 	if s.is_empty() {
-		let map = ALIASES.lock().unwrap();
+		let map = &mut ctx.aliases;
 		if map.is_empty() {
 			println!("No aliases set");
 		} else {
@@ -85,15 +90,14 @@ pub fn alias(s: &[&String]) {
 			return;
 		}
 	}
-	let re = Regex::new(r"^([a-zA-Z0-9_]+)=(.*)$").unwrap();
-	let mut all = ALIASES.lock().unwrap();
+    let all = &mut ctx.aliases;
 	for input in s.iter() {
-		if !re.is_match(input) {
+		if !CHECK_EQ.is_match(input) {
 			eprintln!("yui: alias: invalid usage\n  alias OPTION=VALUE OPTION=VALUE ...");
 			break;
 		}
 
-		for cap in re.captures_iter(input) {
+		for cap in CHECK_EQ.captures_iter(input) {
 			let name = cap[1].to_string();
 			let value = cap[2].to_string();
 			all.insert(name, value);
@@ -101,15 +105,18 @@ pub fn alias(s: &[&String]) {
 	}
 }
 
-//pub fn history(s: &[&String]) {
-   //if s.is_empty() {
-       //let reader = BufReader::new(histfile);
-       //for (i, l) in reader.lines().enumerate() {
-            //println!("{}: {}", i, l);
-       //}
-   //} else if s.get(0) == "clear" {
-   //}
-//}
+//pub fn history(num: usize, hist: &String, s: &[&String]) {
+    //let pad = num.to_string().len(); // not the optimal way, but it works
+pub fn history(hist: &String, s:&[&String]) {
+    if s.is_empty() {
+       println!("History from file: {}\n", hist);
+       let reader = BufReader::new(File::open(hist).unwrap());
+       for (i, l) in reader.lines().enumerate() {
+            println!("{: >8}   {}", i, l.unwrap());
+       }
+    }/* else if s.get(0) == "clear" {
+    }*/
+}
 
 #[cfg(test)]
 mod tests {

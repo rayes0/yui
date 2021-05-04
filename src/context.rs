@@ -1,15 +1,20 @@
-use crate::config::YuiConfig;
 use std::collections::HashMap;
 
+use crate::paths;
+use crate::config::YuiConfig;
+
+#[derive(Clone)]
 pub struct Context {
-    config: YuiConfig,
-    aliases: HashMap<String, String>,
+    pub config: YuiConfig,
+    pub histfile: String,
+    pub aliases: HashMap<String, String>,
 }
 
 impl Context {
     pub fn new() -> Self {
         Self {
             config: YuiConfig::default(),
+            histfile: [paths::get_user_home(), ".yui_history".to_string()].join("/"),
             aliases: HashMap::new(),
         }
     }

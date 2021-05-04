@@ -6,18 +6,24 @@ use std::{
 };
 
 //use rustyline::history::History;
+use lazy_static::lazy_static;
+use regex::Regex;
 
 //use crate::ALIASES;
 use crate::config;
 use crate::paths;
 use crate::context::Context;
 
-pub fn parse_file(mut ctx: Context, path: impl AsRef<Path>) {
+
+pub fn parse_file(ctx: &mut Context, path: impl AsRef<Path>) {
 	let lines = split_file_lines(path);
 	let mut in_setblock = false;
 	let mut in_aliasblock = false;
+lazy_static! {
+    static ref CHECK_COMMENT: Regex = Regex::new(r"^\#.*").unwrap();
+}
 	for (i, s) in lines.iter().enumerate() {
-		if regex::Regex::new(r"^\#.*").unwrap().is_match(&s) {
+		if CHECK_COMMENT.is_match(&s) {
 			// line is a comment
 			continue;
 		}
@@ -55,7 +61,7 @@ pub fn parse_file(mut ctx: Context, path: impl AsRef<Path>) {
 				continue;
 			}
 		}
-		crate::spawn::choose_and_run(false, split_to_args(s.to_string()));
+		crate::spawn::choose_and_run(ctx, false, split_to_args(s.to_string()));
 	}
 }
 

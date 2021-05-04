@@ -3,13 +3,14 @@ use std::process::{Command, Stdio};
 
 use crate::builtins;
 use crate::parser;
-use crate::ALIASES;
+use crate::context::Context;
+//use crate::ALIASES;
 
-pub fn choose_and_run(int: bool, raw: parser::ArgTypes) {
+pub fn choose_and_run(ctx: &mut Context, int: bool, raw: parser::ArgTypes) {
 	match raw {
 		parser::ArgTypes::Norm(data, false) => {
 			// normal command
-			spawn_cmd(int, &data);
+			spawn_cmd(ctx, int, &data);
 		}
 		parser::ArgTypes::Piped(data, false) => {
 			// contains one or more pipes
@@ -29,9 +30,9 @@ pub fn choose_and_run(int: bool, raw: parser::ArgTypes) {
 	};
 }
 
-pub fn spawn_cmd(int: bool, raw: &[String]) {
+pub fn spawn_cmd(ctx: &mut Context, int: bool, raw: &[String]) {
 	let mut cmd: Vec<String>;
-	if let Some(d) = check_aliases(&raw[0]) {
+	if let Some(d) = check_aliases(ctx, &raw[0]) {
 		if int == true {
 			// only expand aliases in interactive mode
 			cmd = raw.to_vec();
@@ -46,7 +47,7 @@ pub fn spawn_cmd(int: bool, raw: &[String]) {
 	let cmd = cmd_split.next().unwrap(); // first one will be the command
 	let args = cmd_split.clone();
 	// check for builtins
-	if check_builtins(&mut cmd.as_str(), &cmd_split.collect::<Vec<&String>>()) {
+	if check_builtins(ctx, &mut cmd.as_str(), &cmd_split.collect::<Vec<&String>>()) {
 		return;
 	} else {
 		// Run commands, echo any errors
@@ -138,15 +139,15 @@ fn spawn_chained(all: &[&[String]]) {
 	}
 }
 
-fn check_builtins(c: &str, a: &[&String], ) -> bool {
+fn check_builtins(ctx: &mut Context, c: &str, a: &[&String], ) -> bool {
 	let args = a.to_vec();
 	match c {
 		"cd" => builtins::cd(&args),
 		"echo" => builtins::echo(&args),
 		"export" => builtins::export(&args),
-		"set" => builtins::set(&args),
-		"alias" => builtins::alias(&args),
-		//"history" => builtins::history(&args),
+		"set" => builtins::set(ctx, &args),
+		"alias" => builtins::alias(ctx, &args),
+        "history" => builtins::history(&ctx.histfile, &args),
 		"version" => {
 			println!("yui, version 0.0\nA bash-like shell focused on speed and simplicity.\n")
 		}
@@ -156,9 +157,9 @@ fn check_builtins(c: &str, a: &[&String], ) -> bool {
 	true
 }
 
-fn check_aliases(c: &String) -> Option<Vec<String>> {
+fn check_aliases(ctx: &mut Context, c: &String) -> Option<Vec<String>> {
 	//let text = &c.to_string();
-	let aliases = ALIASES.lock().unwrap();
+	let aliases = &mut ctx.aliases;
 	if aliases.contains_key(c) {
 		let key = &aliases[c];
 		if let parser::ArgTypes::Norm(c, _) = parser::split_to_args(key.to_string()) {
