@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
-use crate::paths;
 use crate::config::YuiConfig;
+use crate::paths;
 
 #[derive(Clone)]
 pub struct Context {
