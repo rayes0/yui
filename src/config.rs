@@ -2,10 +2,7 @@ use std::convert::Into;
 use std::default::Default;
 use std::process::exit;
 
-//use regex::Regex;
-
-//use crate::ALIASES;
-//use crate::CONFIG;
+use crate::HINT_COLOR;
 use crate::builtins::CHECK_EQ;
 use crate::context::Context;
 use rustyline::config::*;
@@ -19,13 +16,12 @@ use rustyline::config::{
 use colored::Color;
 
 #[derive(Clone, Debug)]
-pub struct YuiConfig {
+pub struct Config {
     pub hist_ign_space: bool,
     pub hist_ign_dups: bool,
     pub hist_max_size: usize,
     pub completion_type: CompletionType,
     pub completion_limit: usize,
-    pub hinting_color: Color,
     pub keyseq_timeout: i32,
     pub edit_mode: EditMode,
     pub auto_add_history: bool,
@@ -38,7 +34,7 @@ pub struct YuiConfig {
 }
 
 // Define defaults here
-impl Default for YuiConfig {
+impl Default for Config {
     fn default() -> Self {
         Self {
             hist_ign_space: true,
@@ -46,7 +42,6 @@ impl Default for YuiConfig {
             hist_max_size: 1000,
             completion_type: CompletionType::List,
             completion_limit: 50,
-            hinting_color: Color::BrightBlack,
             keyseq_timeout: 10,
             edit_mode: EditMode::Emacs,
             auto_add_history: true,
@@ -93,7 +88,6 @@ pub fn convert_and_set_key(ctx: &mut Context, key: &str, raw: &str) -> bool {
         "hist_max_size" => ctx.config.hist_max_size = string_to_type(raw, &"size").into(),
         "completion_type" => ctx.config.completion_type = string_to_type(raw, &"complete").into(),
         "completion_limit" => ctx.config.completion_limit = string_to_type(raw, &"size").into(),
-        "hinting_color" => ctx.config.hinting_color = string_to_type(raw, &"colorname").into(),
         "keyseq_timeout" => ctx.config.keyseq_timeout = string_to_type(raw, &"int32").into(),
         "edit_mode" => ctx.config.edit_mode = string_to_type(raw, &"edit").into(),
         "auto_add_history" => ctx.config.auto_add_history = string_to_type(raw, &"boolean").into(),
@@ -103,6 +97,10 @@ pub fn convert_and_set_key(ctx: &mut Context, key: &str, raw: &str) -> bool {
         "check_cur_pos" => ctx.config.check_cur_pos = string_to_type(raw, &"boolean").into(),
         "indent_size" => ctx.config.indent_size = string_to_type(raw, &"size").into(),
         "bracketed_paste" => ctx.config.bracketed_paste = string_to_type(raw, &"boolean").into(),
+        "hinting_color" => {
+			let mut color = HINT_COLOR.lock().unwrap();
+			*color = string_to_type(raw, &"colorname").into();
+		},
         _ => return false,
     }
     true

@@ -4,7 +4,6 @@ use std::process::{Command, Stdio};
 use crate::builtins;
 use crate::context::Context;
 use crate::parser;
-//use crate::ALIASES;
 
 pub fn choose_and_run(ctx: &mut Context, int: bool, raw: parser::ArgTypes) {
     match raw {
@@ -54,8 +53,14 @@ pub fn spawn_cmd(ctx: &mut Context, int: bool, raw: &[String]) {
         let child_cur = Command::new(cmd).args(args).spawn();
         match child_cur {
             Ok(mut child) => {
-                if let Err(m) = child.wait() {
-                    eprintln!("{}", m);
+                match child.wait() {
+                    Ok(c) => {
+                        match c.code() {
+                            Some(status) => ctx.laststatus = status,
+                            None => println!("terminated by signal"),
+                        }
+                    },
+                    Err(e) => eprintln!("{}", e),
                 }
             }
             Err(e) => eprintln!("{}", e),

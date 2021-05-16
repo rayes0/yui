@@ -5,11 +5,9 @@ use std::{
     process::exit,
 };
 
-//use rustyline::history::History;
 use lazy_static::lazy_static;
 use regex::Regex;
 
-//use crate::ALIASES;
 use crate::config;
 use crate::context::Context;
 use crate::paths;

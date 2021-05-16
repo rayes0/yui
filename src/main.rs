@@ -1,8 +1,8 @@
 use std::{
-    //collections::HashMap,
     env,
     fs::File,
     process::exit,
+	sync::Mutex,
 };
 
 //use libc;
@@ -30,6 +30,9 @@ use helper::CustomHelper;
 
 lazy_static! {
     static ref CHANGE_SET: Regex = Regex::new(r"^set\s.*").unwrap();
+
+	// TODO: find way to make this non global
+	static ref HINT_COLOR: Mutex<Color> = Mutex::new(Color::BrightBlack); // default hint color
 }
 
 fn main() {
@@ -108,10 +111,6 @@ fn repl(ctx: &mut Context) -> bool {
 
         match readline {
             Ok(line) => {
-                //let mut conf = CONFIG.lock().unwrap();
-                //if conf.auto_add_history == false {
-                //    rl.add_history_entry(line.as_str());
-                //}
 
                 if line.trim() == "exit" {
                     println!("Goodbye!");
@@ -126,7 +125,10 @@ fn repl(ctx: &mut Context) -> bool {
                 //TODO: Make this more reliable by matching later
                 } else if CHANGE_SET.is_match(&line.trim()) {
                     spawn::choose_and_run(ctx, true, parser::split_to_args(line));
+					rl.save_history(&ctx.histfile).unwrap();
                     break true; // need to reload the line editor
+                } else if line.trim() == "?" {
+                    println!("Last exit code: {}", ctx.laststatus);
                 } else {
                     spawn::choose_and_run(ctx, true, parser::split_to_args(line));
                 }

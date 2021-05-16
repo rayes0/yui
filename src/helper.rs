@@ -1,3 +1,4 @@
+use crate::HINT_COLOR;
 use rustyline::{
     completion::{Completer, FilenameCompleter, Pair},
     error::ReadlineError,
@@ -8,7 +9,7 @@ use rustyline::{
 };
 use rustyline_derive::Helper;
 use std::borrow::Cow::{self, Borrowed, Owned};
-//use colored::*;
+use colored::*;
 
 #[derive(Helper)]
 pub struct CustomHelper {
@@ -35,8 +36,7 @@ impl Highlighter for CustomHelper {
         }
     }
     fn highlight_hint<'h>(&self, hint: &'h str) -> Cow<'h, str> {
-        //Owned(hint.color(.hinting_color).to_string())
-        Owned(hint.to_string())
+        Owned(hint.color(*HINT_COLOR.lock().unwrap()).to_string())
     }
     fn highlight<'l>(&self, line: &'l str, pos: usize) -> Cow<'l, str> {
         self.highlighter.highlight(line, pos)
@@ -54,12 +54,3 @@ impl Hinter for CustomHelper {
 }
 
 impl Validator for CustomHelper {}
-
-//impl Validator for CustomHelper {
-//fn validate(&self, ctx: &mut ValidationContext<'_>) -> rustyline::Result<validate::ValidationResult> {
-//self.validator.validate(ctx)
-//}
-//fn validate_while_typing(&self) -> bool {
-//self.validator.validate_while_typing()
-//}
-//}

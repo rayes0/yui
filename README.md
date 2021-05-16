@@ -1,6 +1,6 @@
 # yui
 
-A simple and *minimal* UNIX shell inspired by Bash and Fish, written in Rust.
+A simple and *minimal* UNIX shell inspired by Bash and Fish, written in pure Rust.
 
 `yui` is primarily interactive focused, although it does have a small parser for light scripting. I wrote it mainly to help me learn Rust, and the basics of interfacing and managing UNIX processes.
 
@@ -60,11 +60,12 @@ A sample config file is provided in the `examples` directory. For full documenta
   - [ ] `jobs`, `bg` and `fg` builtins
   - [ ] CTRL-Z
 - [ ] Run command with temporary environment, eg: `PATH=/bin ls`
+- [ ] Run command from another directory without need for cd into it first
 - [ ] Built-in ability to time commands (eg: individual commands in pipe), and other stats
 
 **Editing**
 
-- [X] Utilize readline vi or emacs modes to edit lines
+- [X] Utilize vi or emacs modes to edit lines
 - [ ] Support for multi-line commands (with `\`)
 - [ ] Support using external editor to edit commands
 - [ ] Option for inline alias, variable, and history expansion
@@ -126,7 +127,7 @@ A sample config file is provided in the `examples` directory. For full documenta
 **Won't do** (Things that will *not* be implemented into `yui`, at least for the time being):
 
 - `for`, `while`, `until`, etc. Any kind of looping  -  use a proper scripting language for that
-	- "What! No for loops?!!. What if I need to loop over a directory of files or something?"  -  Use proper tools meant for that, eg: the `find` command for the directory example
+	- "What! No `for` loops?!!. What if I need to loop over a directory of files?"  -  Use proper tools meant for that (eg: GNU `find`)
 - Advanced arithmetic, precision above 8-9 digits, trigonometry, etc. - use an appropriate tool for that
 - Advanced/special expansions: `$$`, `${foo/foo/bar}`, `${foo##.*}`, etc. - You should probably be using a proper scripting language if you need these
 
