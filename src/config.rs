@@ -2,9 +2,9 @@ use std::convert::Into;
 use std::default::Default;
 use std::process::exit;
 
-use crate::HINT_COLOR;
 use crate::builtins::CHECK_EQ;
 use crate::context::Context;
+use crate::HINT_COLOR;
 use rustyline::config::*;
 use rustyline::config::{
     //BellStyle::*,
@@ -31,6 +31,7 @@ pub struct Config {
     pub check_cur_pos: bool,
     pub indent_size: usize,
     pub bracketed_paste: bool,
+    pub prompt_string: String,
 }
 
 // Define defaults here
@@ -51,6 +52,7 @@ impl Default for Config {
             check_cur_pos: false,
             indent_size: 2,
             bracketed_paste: true,
+            prompt_string: ">> ".to_string(),
         }
     }
 }
@@ -98,9 +100,10 @@ pub fn convert_and_set_key(ctx: &mut Context, key: &str, raw: &str) -> bool {
         "indent_size" => ctx.config.indent_size = string_to_type(raw, &"size").into(),
         "bracketed_paste" => ctx.config.bracketed_paste = string_to_type(raw, &"boolean").into(),
         "hinting_color" => {
-			let mut color = HINT_COLOR.lock().unwrap();
-			*color = string_to_type(raw, &"colorname").into();
-		},
+            let mut color = HINT_COLOR.lock().unwrap();
+            *color = string_to_type(raw, &"colorname").into();
+        }
+        "prompt" => ctx.config.prompt_string = raw.to_string(),
         _ => return false,
     }
     true

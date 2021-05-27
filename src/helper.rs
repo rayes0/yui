@@ -1,4 +1,5 @@
 use crate::HINT_COLOR;
+use colored::*;
 use rustyline::{
     completion::{Completer, FilenameCompleter, Pair},
     error::ReadlineError,
@@ -9,7 +10,6 @@ use rustyline::{
 };
 use rustyline_derive::Helper;
 use std::borrow::Cow::{self, Borrowed, Owned};
-use colored::*;
 
 #[derive(Helper)]
 pub struct CustomHelper {
@@ -17,7 +17,7 @@ pub struct CustomHelper {
     pub highlighter: MatchingBracketHighlighter,
     pub validator: MatchingBracketValidator,
     pub hinter: HistoryHinter,
-    pub styled_prompt: String,
+    //pub styled_prompt: String,
 }
 
 impl Completer for CustomHelper {
@@ -28,13 +28,13 @@ impl Completer for CustomHelper {
 }
 
 impl Highlighter for CustomHelper {
-    fn highlight_prompt<'b, 's: 'b, 'p: 'b>(&'s self, prompt: &'p str, default: bool) -> Cow<'b, str> {
-        if default {
-            Borrowed(&self.styled_prompt)
-        } else {
-            Borrowed(prompt)
-        }
-    }
+    //fn highlight_prompt<'b, 's: 'b, 'p: 'b>(&'s self, prompt: &'p str, default: bool) -> Cow<'b, str> {
+    //    if default {
+    //        Borrowed(&self.styled_prompt)
+    //    } else {
+    //        Borrowed(prompt)
+    //    }
+    //}
     fn highlight_hint<'h>(&self, hint: &'h str) -> Cow<'h, str> {
         Owned(hint.color(*HINT_COLOR.lock().unwrap()).to_string())
     }

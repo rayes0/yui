@@ -52,17 +52,13 @@ pub fn spawn_cmd(ctx: &mut Context, int: bool, raw: &[String]) {
         // Run commands, echo any errors
         let child_cur = Command::new(cmd).args(args).spawn();
         match child_cur {
-            Ok(mut child) => {
-                match child.wait() {
-                    Ok(c) => {
-                        match c.code() {
-                            Some(status) => ctx.laststatus = status,
-                            None => println!("terminated by signal"),
-                        }
-                    },
-                    Err(e) => eprintln!("{}", e),
-                }
-            }
+            Ok(mut child) => match child.wait() {
+                Ok(c) => match c.code() {
+                    Some(status) => ctx.laststatus = status,
+                    None => println!("terminated by signal"),
+                },
+                Err(e) => eprintln!("{}", e),
+            },
             Err(e) => eprintln!("{}", e),
         }
     }

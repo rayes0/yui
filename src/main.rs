@@ -1,17 +1,11 @@
-use std::{
-    env,
-    fs::File,
-    process::exit,
-	sync::Mutex,
-};
+use std::{env, fs::File, process::exit, sync::Mutex};
 
 //use libc;
 use lazy_static::lazy_static;
 use regex::Regex;
 
-use rustyline::error::ReadlineError;
 use rustyline::{
-    completion::FilenameCompleter, highlight::MatchingBracketHighlighter, hint::HistoryHinter,
+    completion::FilenameCompleter, error::ReadlineError, highlight::MatchingBracketHighlighter, hint::HistoryHinter,
     validate::MatchingBracketValidator, Config, Editor,
 };
 
@@ -31,8 +25,8 @@ use helper::CustomHelper;
 lazy_static! {
     static ref CHANGE_SET: Regex = Regex::new(r"^set\s.*").unwrap();
 
-	// TODO: find way to make this non global
-	static ref HINT_COLOR: Mutex<Color> = Mutex::new(Color::BrightBlack); // default hint color
+    // TODO: find way to make this non global
+    static ref HINT_COLOR: Mutex<Color> = Mutex::new(Color::BrightBlack); // default hint color
 }
 
 fn main() {
@@ -95,7 +89,7 @@ fn repl(ctx: &mut Context) -> bool {
         highlighter: MatchingBracketHighlighter::new(),
         validator: MatchingBracketValidator::new(),
         hinter: HistoryHinter {},
-        styled_prompt: "".to_owned(),
+        //styled_prompt: "".to_owned(),
     };
     let mut rl = Editor::with_config(editor_config(ctx.clone()));
     rl.set_helper(Some(helper));
@@ -105,13 +99,12 @@ fn repl(ctx: &mut Context) -> bool {
 
     // REPL
     let ret: bool = loop {
-        let prompt = get_prompt();
-        rl.helper_mut().expect("No helper!").styled_prompt = prompt.italic().blue().to_string();
-        let readline = rl.readline(&prompt);
+        //let prompt = get_prompt(ctx);
+        //rl.helper_mut().expect("No helper!").styled_prompt = prompt;
+        let readline = rl.readline(&get_prompt(ctx));
 
         match readline {
             Ok(line) => {
-
                 if line.trim() == "exit" {
                     println!("Goodbye!");
                     rl.save_history(&ctx.histfile).unwrap();
@@ -125,7 +118,7 @@ fn repl(ctx: &mut Context) -> bool {
                 //TODO: Make this more reliable by matching later
                 } else if CHANGE_SET.is_match(&line.trim()) {
                     spawn::choose_and_run(ctx, true, parser::split_to_args(line));
-					rl.save_history(&ctx.histfile).unwrap();
+                    rl.save_history(&ctx.histfile).unwrap();
                     break true; // need to reload the line editor
                 } else if line.trim() == "?" {
                     println!("Last exit code: {}", ctx.laststatus);
@@ -154,11 +147,41 @@ fn repl(ctx: &mut Context) -> bool {
     }
 }
 
-fn get_prompt() -> String {
-    let pre = ">> ";
-    let cwd = paths::condense_home(&env::current_dir().unwrap().display().to_string());
-    let post = " $  ";
-    return [pre, &cwd[..], post].join("");
+fn get_prompt(ctx: &mut Context) -> String {
+    let mut raw = ctx.config.prompt_string.to_owned();
+    if raw.contains("{cwd}") {
+        let cwd = paths::condense_home(&env::current_dir().unwrap().display().to_string());
+        raw = raw.replace("{cwd}", &cwd);
+    }
+    return raw;
+    //let mut all = Vec::<ColoredString>::new();
+    //if raw.contains("{bold}") {
+    //	let mut bold_result = Vec::new();
+    //	let mut bold_sub = raw.match_indices("{bold}");
+    //	for (i, s) in bold_sub {
+    //		println!("{}: {}", i, s);
+    //	}
+    // 	while let next = bold_sub.next() {
+    // 		let s = next.unwrap();
+    // 		if s.contains("{italic}") {
+    // 			let italic_sub = raw.split_inclusive("{italic}");
+    // 			for string in italic_sub {
+    // 				if string == "{italic}" {
+    // 					continue
+    // 				} else {
+    // 					all.push(string.italic());
+    // 				}
+    // 			}
+    // 		}
+    // 		if s == "{bold}" {
+    // 			continue
+    // 		} else if bold_sub.peek() == Some(&"{bold}") {
+    // 			all.push(s.bold());
+    // 		} else {
+    // 			all.push(s.normal());
+    // 		}
+    // 	}
+    //}
 }
 
 fn editor_config(ctx: Context) -> Config {
@@ -187,5 +210,6 @@ fn print_help() {
     println!("  USAGE:  yui [OPTIONS] [FILE]\n");
     println!("  Available options:");
     println!("    -h, --help     Show this help message");
+    println!("    -v, --version  Print version info");
     println!("    -c [COMMAND]   Execute the specified command");
 }

@@ -44,7 +44,7 @@ pub fn parse_file(ctx: &mut Context, path: impl AsRef<Path>) {
         }
         if in_aliasblock == true {
             if config::aliasblock_parse_and_exec(ctx, s) == false {
-                eprintln!("yuirc: Line: {}, Invalid syntax: \"{}\"", i, s);
+                eprintln!("yuirc: Stopped parsing at line {}, Invalid syntax: \"{}\"", i + 1, s);
                 return;
             } else {
                 continue;
@@ -52,7 +52,7 @@ pub fn parse_file(ctx: &mut Context, path: impl AsRef<Path>) {
         }
         if in_setblock == true {
             if config::setblock_parse_and_exec(ctx, s) == false {
-                eprintln!("yuirc: Line: {}, Invalid syntax: \"{}\"", i, s);
+                eprintln!("yuirc: Stopped parsing at line {}, Invalid syntax: \"{}\"", i + 1, s);
                 return;
             } else {
                 continue;

@@ -4,6 +4,8 @@ A simple and *minimal* UNIX shell inspired by Bash and Fish, written in pure Rus
 
 `yui` is primarily interactive focused, although it does have a small parser for light scripting. I wrote it mainly to help me learn Rust, and the basics of interfacing and managing UNIX processes.
 
+It is currently highly experimental and probably shouldn't be used as a daily driver yet.
+
 ## To build
 
 **You will need:**
