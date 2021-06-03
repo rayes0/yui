@@ -150,7 +150,7 @@ fn repl(ctx: &mut Context) -> bool {
 fn get_prompt(ctx: &mut Context) -> String {
     let mut raw = ctx.config.prompt_string.to_owned();
     if raw.contains("{cwd}") {
-        let cwd = paths::condense_home(&env::current_dir().unwrap().display().to_string());
+        let cwd: _ = paths::condense_home(&env::current_dir().unwrap().to_str().unwrap());
         raw = raw.replace("{cwd}", &cwd);
     }
     return raw;

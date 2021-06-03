@@ -1,6 +1,6 @@
 # yui
 
-A simple and *minimal* UNIX shell inspired by Bash and Fish, written in pure Rust.
+A simple and *minimal* UNIX shell inspired by Bash and Fish, written in pure Rust utilizing [rustyline](https://github.com/kkawakam/rustyline), a Rust alternative to GNU readline.
 
 `yui` is primarily interactive focused, although it does have a small parser for light scripting. I wrote it mainly to help me learn Rust, and the basics of interfacing and managing UNIX processes.
 
