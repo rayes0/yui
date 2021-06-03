@@ -63,7 +63,6 @@ A sample config file is provided in the `examples` directory. For full documenta
   - [ ] CTRL-Z
 - [ ] Run command with temporary environment, eg: `PATH=/bin ls`
 - [ ] Run command from another directory without need for cd into it first
-- [ ] Built-in ability to time commands (eg: individual commands in pipe), and other stats
 
 **Editing**
 
@@ -104,7 +103,7 @@ A sample config file is provided in the `examples` directory. For full documenta
 - [X] `cd`
 - [X] `exit`
 	- [ ] Specify custom exit code
-- [ ] `history`
+- [X] `history`
 - [X] `alias`
 - [ ] `exec`
 - [X] `export` (env vars)
